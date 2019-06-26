@@ -3530,6 +3530,10 @@ int WINAPI WinMain(
 
 				S9xMainLoop();
 				GUI.FrameCount++;
+
+#ifdef RETROACHIEVEMENTS
+				RA_DoAchievementsFrame();
+#endif
 			}
 
 #ifdef NETPLAY_SUPPORT

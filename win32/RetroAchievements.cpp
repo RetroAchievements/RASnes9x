@@ -91,7 +91,7 @@ static unsigned char ByteReader(size_t nOffs)
 static void ByteWriter(size_t nOffs, unsigned int nVal)
 {
 	if (nOffs < 0x20000)
-		Memory.RAM[nOffs] = nVal;
+		Memory.RAM[nOffs] = static_cast<uint8>(nVal);
 }
 
 static unsigned char ByteReaderSRAM(size_t nOffs)
@@ -102,7 +102,7 @@ static unsigned char ByteReaderSRAM(size_t nOffs)
 static void ByteWriterSRAM( size_t nOffs, unsigned int nVal )
 {
 	if (nOffs < s_nSRAMBytes)
-		Memory.SRAM[nOffs] = nVal;
+		Memory.SRAM[nOffs] = static_cast<uint8>(nVal);
 }
 
 void RA_OnLoadNewRom()
