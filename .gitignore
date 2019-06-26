@@ -66,6 +66,8 @@ win32/BIOS
 # RetroAchievements
 win32/RA_BuildVer.h
 win32/overlay
+win32/RACache
+win32/RAPrefs_RASnes9x.cfg
 
 # Shared objects (inc. Windows DLLs)
 *.dll

@@ -51,6 +51,10 @@
 #include <vector>
 #include <string>
 
+#ifdef RETROACHIEVEMENTS
+#include "RetroAchievements.h"
+#endif
+
 #ifdef DEBUGGER
 #include "../debug.h"
 #endif
@@ -2293,6 +2297,13 @@ LRESULT CALLBACK WinProc(
 					}
 				}
 			}
+#if RETROACHIEVEMENTS
+			else if (LOWORD(wParam) >= IDM_RA_MENUSTART && LOWORD(wParam) < IDM_RA_MENUEND)
+			{
+				RA_InvokeDialog(LOWORD(wParam));
+				return 0;
+			}
+#endif
 			break;
         }
         break;
@@ -3301,6 +3312,10 @@ int WINAPI WinMain(
 	void InitSnes9x (void);
 	InitSnes9x ();
 
+#ifdef RETROACHIEVEMENTS
+	RA_Init();
+#endif
+
 	if(GUI.FullScreen) {
 		GUI.FullScreen = false;
 		ToggleFullScreen();
@@ -3561,6 +3576,10 @@ loop_exit:
 	Memory.Deinit();
 
 	ClearExts();
+
+#ifdef RETROACHIEVEMENTS
+	RA_Shutdown();
+#endif
 
 	DeInitRenderFilters();
 
