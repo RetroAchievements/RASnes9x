@@ -686,7 +686,21 @@ static void CenterCursor()
 	}
 }
 
-
+#ifdef RETROACHIEVEMENTS
+void S9xRestoreWindowTitle()
+{
+	if (Memory.ROMFilename[0])
+	{
+		char def[_MAX_FNAME];
+		_splitpath(Memory.ROMFilename, NULL, NULL, def, NULL);
+		RA_UpdateAppTitle(def);
+	}
+	else
+	{
+		RA_UpdateAppTitle("");
+	}
+}
+#else
 void S9xRestoreWindowTitle ()
 {
     TCHAR buf [1024];
@@ -701,6 +715,7 @@ void S9xRestoreWindowTitle ()
 
     SetWindowText (GUI.hWnd, buf);
 }
+#endif
 
 void S9xDisplayStateChange (const char *str, bool8 on)
 {
