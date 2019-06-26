@@ -63,7 +63,11 @@ static void GetEstimatedGameTitle(char* sNameOut)
 	sprintf_s(sNameOut, 64, "%s", Memory.ROMName ? &Memory.ROMName[0] : "");
 }
 
-static void ResetEmulator() {}
+static void ResetEmulator()
+{
+	S9xReset();
+}
+
 static void LoadROM(const char* sFullPath) {}
 
 void RA_Init()
