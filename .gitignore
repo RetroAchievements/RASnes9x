@@ -63,6 +63,10 @@ win32/BIOS
 *.la
 *.lo
 
+# RetroAchievements
+win32/RA_BuildVer.h
+win32/overlay
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so

@@ -1,6 +1,7 @@
 [submodule "win32/libpng/src"]
 	path = win32/libpng/src
 	url = https://git.code.sf.net/p/libpng/code
+	ignore = dirty
 [submodule "win32/zlib/src"]
 	path = win32/zlib/src
 	url = https://github.com/madler/zlib.git
@@ -13,3 +14,6 @@
 [submodule "win32/glslang/src"]
 	path = win32/glslang/src
 	url = https://github.com/KhronosGroup/glslang.git
+[submodule "RAInterface"]
+	path = RAInterface
+	url = https://github.com/RetroAchievements/RAInterface.git
