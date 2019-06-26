@@ -3964,6 +3964,9 @@ static bool LoadROMPlain(const TCHAR *filename)
 	SetCurrentDirectory(S9xGetDirectoryT(ROM_DIR));
     if (Memory.LoadROM (_tToChar(filename)))
     {
+#ifdef RETROACHIEVEMENTS
+		RA_OnLoadNewRom();
+#endif
 		S9xStartCheatSearch (&Cheat);
         ReInitSound();
 		ResetFrameTimer();

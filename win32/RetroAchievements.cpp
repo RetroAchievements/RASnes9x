@@ -3,6 +3,10 @@
 #include "RA_BuildVer.h"
 
 #include "wsnes9x.h"
+#include "../snes9x.h"
+#include "../memmap.h"
+
+static size_t s_nSRAMBytes = 0;
 
 static void CauseUnpause() {}
 static void CausePause() {}
@@ -43,7 +47,11 @@ static void RebuildMenu()
 	DrawMenuBar(GUI.hWnd);
 }
 
-static void GetEstimatedGameTitle(char* sNameOut) {}
+static void GetEstimatedGameTitle(char* sNameOut)
+{
+	sprintf_s(sNameOut, 64, "%s", Memory.ROMName ? &Memory.ROMName[0] : "");
+}
+
 static void ResetEmulator() {}
 static void LoadROM(const char* sFullPath) {}
 
@@ -62,4 +70,39 @@ void RA_Init()
 
 	// ensure titlebar text matches expected format
 	RA_UpdateAppTitle("");
+}
+
+static unsigned char ByteReader(size_t nOffs)
+{
+	return Memory.RAM[nOffs % 0x20000];
+}
+
+static void ByteWriter(size_t nOffs, unsigned int nVal)
+{
+	if (nOffs < 0x20000)
+		Memory.RAM[nOffs] = nVal;
+}
+
+static unsigned char ByteReaderSRAM(size_t nOffs)
+{
+	return Memory.SRAM[nOffs % s_nSRAMBytes];
+}
+
+static void ByteWriterSRAM( size_t nOffs, unsigned int nVal )
+{
+	if (nOffs < s_nSRAMBytes)
+		Memory.SRAM[nOffs] = nVal;
+}
+
+void RA_OnLoadNewRom()
+{
+	s_nSRAMBytes = Memory.SRAMSize ? (1 << (Memory.SRAMSize + 3)) * 128 : 0;
+	if (s_nSRAMBytes > 0x20000)
+		s_nSRAMBytes = 0x20000;
+
+	RA_ClearMemoryBanks();
+	RA_InstallMemoryBank(0, ByteReader, ByteWriter, 0x20000);
+	RA_InstallMemoryBank(1, ByteReaderSRAM, ByteWriterSRAM, s_nSRAMBytes);
+
+	RA_OnLoadNewRom(Memory.ROM, Memory.CalculatedSize);
 }

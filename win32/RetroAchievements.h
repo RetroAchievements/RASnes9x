@@ -4,5 +4,6 @@
 #include "../RAInterface/RA_Interface.h"
 
 void RA_Init();
+void RA_OnLoadNewRom();
 
 #endif __RETROACHIEVEMENTS_H_
