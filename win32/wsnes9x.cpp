@@ -1848,6 +1848,10 @@ LRESULT CALLBACK WinProc(
 			break;
 
 		case ID_FILE_EXIT:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_ConfirmLoadNewRom(true))
+				break;
+#endif
             S9xSetPause (PAUSE_EXIT);
             PostMessage (hWnd, WM_CLOSE, 0, 0);
             break;
@@ -2344,6 +2348,11 @@ LRESULT CALLBACK WinProc(
 		break;
 
 	case WM_CLOSE:
+#ifdef RETROACHIEVEMENTS
+		if (!RA_ConfirmLoadNewRom(true))
+			return 0;
+#endif
+
 		SaveMainWinPos();
 		break;
 
@@ -4023,6 +4032,11 @@ static bool LoadROMMulti(const TCHAR *filename, const TCHAR *filename2)
 }
 
 static bool LoadROM(const TCHAR *filename, const TCHAR *filename2 /*= NULL*/) {
+
+#ifdef RETROACHIEVEMENTS
+	if (!RA_ConfirmLoadNewRom(false))
+		return false;
+#endif
 
 #ifdef NETPLAY_SUPPORT
 	if (Settings.NetPlay && !Settings.NetPlayServer)
