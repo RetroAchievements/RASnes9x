@@ -941,6 +941,9 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			Settings.FrameAdvance = false;
 			GUI.FrameAdvanceJustPressed = 0;
 			CenterCursor();
+#ifdef RETROACHIEVEMENTS
+			RA_SetPaused(Settings.Paused);
+#endif
 			if(!Settings.Paused)
 				S9xMouseOn();
 			hitHotKey = true;
@@ -2115,6 +2118,9 @@ LRESULT CALLBACK WinProc(
 			Settings.Paused = !Settings.Paused;
 			Settings.FrameAdvance = false;
 			GUI.FrameAdvanceJustPressed = 0;
+#ifdef RETROACHIEVEMENTS
+			RA_SetPaused(Settings.Paused);
+#endif
 			break;
         case ID_FILE_LOAD0:
 			FreezeUnfreezeSlot (0, FALSE);
@@ -3238,6 +3244,10 @@ static void ProcessInput(void)
 #endif
 	S9xWinScanJoypads ();
 
+#ifdef RETROACHIEVEMENTS
+	RA_ProcessInputs();
+#endif
+
 	extern uint32 joypads [8];
 	for(int i = 0 ; i < 8 ; i++)
 		ControlPadFlagsToS9xReportButtons(i, joypads[i]);
@@ -3406,6 +3416,11 @@ int WINAPI WinMain(
             }
 
 			S9xSetSoundMute(GUI.Mute || Settings.ForcedPause || (Settings.Paused && (!Settings.FrameAdvance || GUI.FAMute)));
+
+#ifdef RETROACHIEVEMENTS
+			if (RA_IsOverlayFullyVisible())
+				ProcessInput();
+#endif
         }
 
 #ifdef NETPLAY_SUPPORT

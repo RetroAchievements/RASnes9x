@@ -8,8 +8,19 @@
 
 static size_t s_nSRAMBytes = 0;
 
-static void CauseUnpause() {}
-static void CausePause() {}
+static void CauseUnpause()
+{
+	// copied from ID_FILE_PAUSE handler
+	Settings.Paused = false;
+	Settings.FrameAdvance = false;
+	GUI.FrameAdvanceJustPressed = 0;
+}
+
+static void CausePause()
+{
+	// same as CauseUnpause, but if framestepping, keep framestepping
+	Settings.Paused = true;
+}
 
 static int GetMenuItemIndex(HMENU hMenu, const char* pItemName)
 {
@@ -105,4 +116,23 @@ void RA_OnLoadNewRom()
 	RA_InstallMemoryBank(1, ByteReaderSRAM, ByteWriterSRAM, s_nSRAMBytes);
 
 	RA_OnLoadNewRom(Memory.ROM, Memory.CalculatedSize);
+}
+
+void RA_ProcessInputs()
+{
+	if (RA_IsOverlayFullyVisible())
+	{
+		extern bool S9xGetState(WORD KeyIdent);
+
+		ControllerInput input;
+		input.m_bUpPressed		= !S9xGetState(Joypad[0].Up);
+		input.m_bDownPressed	= !S9xGetState(Joypad[0].Down);
+		input.m_bLeftPressed	= !S9xGetState(Joypad[0].Left);
+		input.m_bRightPressed	= !S9xGetState(Joypad[0].Right);
+		input.m_bConfirmPressed	= !S9xGetState(Joypad[0].A);
+		input.m_bCancelPressed	= !S9xGetState(Joypad[0].B);
+		input.m_bQuitPressed	= !S9xGetState(Joypad[0].Start);
+
+		RA_NavigateOverlay(&input);
+	}
 }

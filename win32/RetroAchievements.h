@@ -5,5 +5,6 @@
 
 void RA_Init();
 void RA_OnLoadNewRom();
+void RA_ProcessInputs();
 
 #endif __RETROACHIEVEMENTS_H_
