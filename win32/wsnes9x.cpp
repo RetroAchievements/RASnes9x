@@ -53,6 +53,7 @@
 
 #ifdef RETROACHIEVEMENTS
 #include "RetroAchievements.h"
+#include "RA_BuildVer.h"
 #endif
 
 #ifdef DEBUGGER
@@ -5162,7 +5163,12 @@ INT_PTR CALLBACK DlgAboutProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		WinRefreshDisplay();
 		{
 			TCHAR buf[2048];//find better way of dealing.
+#ifdef RETROACHIEVEMENTS
+			_stprintf(buf, TEXT("RASnes9x ") TEXT(RASNES9X_VERSION_SHORT) TEXT("\r\n\r\n")
+				           DISCLAIMER_TEXT,TEXT(VERSION));
+#else
 			_stprintf(buf,DISCLAIMER_TEXT,TEXT(VERSION));
+#endif
 			SetDlgItemText(hDlg, IDC_DISCLAIMER, buf);
 			SetWindowText(hDlg, ABOUT_DIALOG_TITLE APP_NAME);
 		}
