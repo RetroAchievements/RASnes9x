@@ -6,5 +6,6 @@
 void RA_Init();
 void RA_OnLoadNewRom();
 void RA_ProcessInputs();
+void RA_ClampSpeed();
 
 #endif __RETROACHIEVEMENTS_H_

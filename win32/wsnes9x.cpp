@@ -471,7 +471,7 @@ void FreezeUnfreezeSlot(int slot, bool8 freeze);
 void FreezeUnfreeze (const char *filename, bool8 freeze);
 void CheckDirectoryIsWritable (const char *filename);
 static void CheckMenuStates ();
-static void ResetFrameTimer ();
+void ResetFrameTimer ();
 static bool LoadROM (const TCHAR *filename, const TCHAR *filename2 = NULL);
 static bool LoadROMMulti (const TCHAR *filename, const TCHAR *filename2);
 bool8 S9xLoadROMImage (const TCHAR *string);
@@ -907,7 +907,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 
 
 		if(wParam == CustomKeys.FrameAdvance.key
-		&& modifiers == CustomKeys.FrameAdvance.modifiers)
+		&& modifiers == CustomKeys.FrameAdvance.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			static DWORD lastTime = 0;
 			if((int)(timeGetTime() - lastTime) > 20)
@@ -1067,6 +1071,10 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			for(i=1; FrameTimings[i]<Settings.FrameTime; ++i)
 				;
 			Settings.FrameTime = FrameTimings[i+1];
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				RA_ClampSpeed();
+#endif
 			ResetFrameTimer ();
 //					sprintf (InfoString, WINPROC_EMUFRAMETIME,
 //						Settings.FrameTime / 1);
@@ -1162,7 +1170,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			PostMessage(GUI.hWnd,WM_CLOSE,(WPARAM)NULL,(LPARAM)(NULL));
 		}
         if(wParam == CustomKeys.Rewind.key
-		&& modifiers == CustomKeys.Rewind.modifiers)
+		&& modifiers == CustomKeys.Rewind.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
             if(!Settings.Rewinding)
                 S9xMessage (S9X_INFO, 0, GUI.rewindBufferSize?WINPROC_REWINDING_TEXT:WINPROC_REWINDING_DISABLED);
@@ -2280,6 +2292,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_FRAME_ADVANCE:
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				break;
+#endif
 			Settings.Paused = true;
 			Settings.FrameAdvance = true;
 			break;
@@ -3980,7 +3996,7 @@ static void CheckMenuStates ()
 	SetMenuItemInfo (GUI.hMenu, ID_FILE_AVI_RECORDING, FALSE, &mii);
 }
 
-static void ResetFrameTimer ()
+void ResetFrameTimer ()
 {
     QueryPerformanceCounter((LARGE_INTEGER*)&PCStart);
 	PCStartTicks = timeGetTime()*1000;

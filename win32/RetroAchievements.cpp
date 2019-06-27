@@ -63,8 +63,31 @@ static void GetEstimatedGameTitle(char* sNameOut)
 	sprintf_s(sNameOut, 64, "%s", Memory.ROMName ? &Memory.ROMName[0] : "");
 }
 
+void RA_ClampSpeed()
+{
+	if (Settings.PAL)
+	{
+		if (Settings.FrameTime > Settings.FrameTimePAL)
+			Settings.FrameTime = Settings.FrameTimePAL;
+	}
+	else
+	{
+		if (Settings.FrameTime > Settings.FrameTimeNTSC)
+			Settings.FrameTime = Settings.FrameTimeNTSC;
+	}
+}
+
 static void ResetEmulator()
 {
+	// ensure speed is not below normal
+	RA_ClampSpeed();
+	extern void ResetFrameTimer();
+	ResetFrameTimer();
+
+	// disable autosave
+	Settings.AutoSaveDelay = 0;
+
+	// reset system
 	S9xReset();
 }
 
