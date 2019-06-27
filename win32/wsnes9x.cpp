@@ -1597,6 +1597,11 @@ LRESULT CALLBACK WinProc(
 			break;
 		case ID_FILE_MOVIE_PLAY:
 			{
+#ifdef RETROACHIEVEMENTS
+				if (!RA_WarnDisableHardcore("playback a recording"))
+					break;
+#endif
+
 				RestoreGUIDisplay ();  //exit DirectX
 				OpenMovieParams op;
 				memset(&op, 0, sizeof(op));
