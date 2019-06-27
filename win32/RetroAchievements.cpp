@@ -5,6 +5,7 @@
 #include "wsnes9x.h"
 #include "../snes9x.h"
 #include "../memmap.h"
+#include "../cheats.h"
 
 static size_t s_nSRAMBytes = 0;
 
@@ -88,7 +89,16 @@ static void ResetEmulator()
 	Settings.AutoSaveDelay = 0;
 
 	// reset system
-	S9xReset();
+	if (!Settings.StopEmulation)
+		S9xReset();
+
+	// disable any active cheats
+	S9xCheatsDisable();
+
+	// close the cheat search window
+	extern HWND cheatSearchHWND;
+	if (cheatSearchHWND)
+		DestroyWindow(cheatSearchHWND);
 }
 
 static void LoadROM(const char* sFullPath) {}

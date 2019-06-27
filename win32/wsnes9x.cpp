@@ -2225,6 +2225,10 @@ LRESULT CALLBACK WinProc(
             FreezeUnfreezeDialog(TRUE);
             break;
 		case ID_CHEAT_ENTER:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			while (DialogBox(g_hInst, MAKEINTRESOURCE(IDD_CHEATER), hWnd, DlgCheater) == NC_SEARCHDB)
 			{
@@ -2234,6 +2238,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_CHEAT_SEARCH:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			if(!cheatSearchHWND) // create and show non-modal cheat search window
 			{
@@ -2247,6 +2255,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_CHEAT_SEARCH_MODAL:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			DialogBox(g_hInst, MAKEINTRESOURCE(IDD_CHEAT_SEARCH), hWnd, DlgCheatSearch); // modal
 			S9xSaveCheatFile (S9xGetFilename (".cht", CHEAT_DIR));
@@ -2254,6 +2266,10 @@ LRESULT CALLBACK WinProc(
 			break;
 		case ID_CHEAT_APPLY:
 			Settings.ApplyCheats = !Settings.ApplyCheats;
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				break;
+#endif
 			if (!Settings.ApplyCheats){
 				S9xCheatsDisable ();
 				S9xMessage (S9X_INFO, S9X_GAME_GENIE_CODE_ERROR, CHEATS_INFO_DISABLED);
@@ -11021,7 +11037,11 @@ void S9xPostRomInit()
 	// "Cheats are on" message if cheats are on and active,
 	// to make it less likely that someone will think there is some bug because of
 	// a lingering cheat they don't realize is on
-	if (Settings.ApplyCheats)
+	if (Settings.ApplyCheats
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 	{
 		S9xCheatsEnable();
 		extern struct SCheatData Cheat;
