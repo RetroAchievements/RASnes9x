@@ -88,6 +88,11 @@ static void ResetEmulator()
 	// disable autosave
 	Settings.AutoSaveDelay = 0;
 
+	// show all layers
+	Settings.BG_Forced = 0;
+	Settings.Transparency = TRUE;
+	Settings.DisableGraphicWindows = FALSE;
+
 	// reset system
 	if (!Settings.StopEmulation)
 		S9xReset();

@@ -1100,31 +1100,51 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			hitHotKey = true;
 		}
 		if(wParam == CustomKeys.BGL1.key
-		&& modifiers == CustomKeys.BGL1.modifiers)
+		&& modifiers == CustomKeys.BGL1.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 1;
 			S9xDisplayStateChange (WINPROC_BG1, !(Settings.BG_Forced & 1));
 		}
 		if(wParam == CustomKeys.BGL2.key
-		&& modifiers == CustomKeys.BGL2.modifiers)
+		&& modifiers == CustomKeys.BGL2.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 2;
 			S9xDisplayStateChange (WINPROC_BG2, !(Settings.BG_Forced & 2));
 		}
 		if(wParam == CustomKeys.BGL3.key
-		&& modifiers == CustomKeys.BGL3.modifiers)
+		&& modifiers == CustomKeys.BGL3.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 4;
 			S9xDisplayStateChange (WINPROC_BG3, !(Settings.BG_Forced & 4));
 		}
 		if(wParam == CustomKeys.BGL4.key
-		&& modifiers == CustomKeys.BGL4.modifiers)
+		&& modifiers == CustomKeys.BGL4.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 8;
 			S9xDisplayStateChange (WINPROC_BG4, !(Settings.BG_Forced & 8));
 		}
 		if(wParam == CustomKeys.BGL5.key
-		&& modifiers == CustomKeys.BGL5.modifiers)
+		&& modifiers == CustomKeys.BGL5.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 16;
 			S9xDisplayStateChange (WINPROC_SPRITES, !(Settings.BG_Forced & 16));
@@ -1257,7 +1277,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 		}
 
 		if(wParam == CustomKeys.Transparency.key
-		&& modifiers == CustomKeys.Transparency.modifiers)
+		&& modifiers == CustomKeys.Transparency.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 //					if (Settings.SixteenBit)
 			{
@@ -1271,7 +1295,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 //					}
 		}
 		if(wParam == CustomKeys.ClippingWindows.key
-		&& modifiers == CustomKeys.ClippingWindows.modifiers)
+		&& modifiers == CustomKeys.ClippingWindows.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.DisableGraphicWindows = !Settings.DisableGraphicWindows;
 			S9xDisplayStateChange (WINPROC_CLIPWIN,
