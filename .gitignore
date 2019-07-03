@@ -5,6 +5,7 @@ win32/stdout.txt
 win32/stderr.txt
 win32/Roms
 win32/Saves
+win32/SaveStates
 win32/Cheats
 win32/Screenshots
 win32/Movies
@@ -62,6 +63,12 @@ win32/BIOS
 *.a
 *.la
 *.lo
+
+# RetroAchievements
+win32/RA_BuildVer.h
+win32/overlay
+win32/RACache
+win32/RAPrefs_RASnes9x.cfg
 
 # Shared objects (inc. Windows DLLs)
 *.dll

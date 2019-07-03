@@ -43,6 +43,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{31758447-7e76-4af0-8561-a377194049e1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="RetroAchievements">
+      <UniqueIdentifier>{11aa6713-4322-4b30-a159-56766d799bdb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\statemanager.h">
@@ -284,6 +287,12 @@
     </ClInclude>
     <ClInclude Include="..\filter\snes_ntsc_impl.h">
       <Filter>Filter</Filter>
+    </ClInclude>
+    <ClInclude Include="RetroAchievements.h">
+      <Filter>RetroAchievements</Filter>
+    </ClInclude>
+    <ClInclude Include="..\RAInterface\RA_Interface.h">
+      <Filter>RetroAchievements</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -616,6 +625,12 @@
     </ClCompile>
     <ClCompile Include="..\filter\snes_ntsc.c">
       <Filter>Filter</Filter>
+    </ClCompile>
+    <ClCompile Include="RetroAchievements.cpp">
+      <Filter>RetroAchievements</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RAInterface\RA_Interface.cpp">
+      <Filter>RetroAchievements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

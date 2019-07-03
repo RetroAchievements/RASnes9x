@@ -20,6 +20,10 @@
 #include "language.h"
 #include "gfx.h"
 
+#ifdef RETROACHIEVEMENTS
+#include "win32\RetroAchievements.h"
+#endif
+
 #ifndef min
 #define min(a,b)	(((a) < (b)) ? (a) : (b))
 #endif
@@ -1055,6 +1059,10 @@ bool8 S9xFreezeGame (const char *filename)
 
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, String);
 
+#ifdef RETROACHIEVEMENTS
+		RA_OnSaveState(filename);
+#endif
+
 		return (TRUE);
 	}
 
@@ -1075,6 +1083,11 @@ bool8 S9xUnfreezeGame (const char *filename)
 	char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
 
 	const char	*base = S9xBasename(filename);
+
+#ifdef RETROACHIEVEMENTS
+	if (!RA_WarnDisableHardcore("load a state"))
+		return (FALSE);
+#endif
 
 	_splitpath(filename, drive, dir, def, ext);
 	S9xResetSaveTimer(!strcmp(ext, "oops") || !strcmp(ext, "oop") || !strcmp(ext, ".oops") || !strcmp(ext, ".oop"));
@@ -1131,6 +1144,10 @@ bool8 S9xUnfreezeGame (const char *filename)
 			sprintf(String, SAVE_INFO_LOAD " %s", base);
 
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, String);
+
+#ifdef RETROACHIEVEMENTS
+		RA_OnLoadState(filename);
+#endif
 
 		return (TRUE);
 	}

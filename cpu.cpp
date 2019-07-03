@@ -17,6 +17,9 @@
 #ifdef DEBUGGER
 #include "debug.h"
 #endif
+#ifdef RETROACHIEVEMENTS
+#include "win32\RetroAchievements.h"
+#endif
 
 static void S9xResetCPU (void);
 static void S9xSoftResetCPU (void);
@@ -167,6 +170,10 @@ void S9xSoftReset (void)
 		S9xResetSRTC();
 	if (Settings.MSU1)
 		S9xMSU1Init();
+
+#ifdef RETROACHIEVEMENTS
+	RA_OnReset();
+#endif
 
 	S9xInitCheatData();
 }

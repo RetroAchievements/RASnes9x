@@ -51,6 +51,11 @@
 #include <vector>
 #include <string>
 
+#ifdef RETROACHIEVEMENTS
+#include "RetroAchievements.h"
+#include "RA_BuildVer.h"
+#endif
+
 #ifdef DEBUGGER
 #include "../debug.h"
 #endif
@@ -467,7 +472,7 @@ void FreezeUnfreezeSlot(int slot, bool8 freeze);
 void FreezeUnfreeze (const char *filename, bool8 freeze);
 void CheckDirectoryIsWritable (const char *filename);
 static void CheckMenuStates ();
-static void ResetFrameTimer ();
+void ResetFrameTimer ();
 static bool LoadROM (const TCHAR *filename, const TCHAR *filename2 = NULL);
 static bool LoadROMMulti (const TCHAR *filename, const TCHAR *filename2);
 bool8 S9xLoadROMImage (const TCHAR *string);
@@ -682,7 +687,21 @@ static void CenterCursor()
 	}
 }
 
-
+#ifdef RETROACHIEVEMENTS
+void S9xRestoreWindowTitle()
+{
+	if (Memory.ROMFilename[0])
+	{
+		char def[_MAX_FNAME];
+		_splitpath(Memory.ROMFilename, NULL, NULL, def, NULL);
+		RA_UpdateAppTitle(def);
+	}
+	else
+	{
+		RA_UpdateAppTitle("");
+	}
+}
+#else
 void S9xRestoreWindowTitle ()
 {
     TCHAR buf [1024];
@@ -697,6 +716,7 @@ void S9xRestoreWindowTitle ()
 
     SetWindowText (GUI.hWnd, buf);
 }
+#endif
 
 void S9xDisplayStateChange (const char *str, bool8 on)
 {
@@ -888,7 +908,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 
 
 		if(wParam == CustomKeys.FrameAdvance.key
-		&& modifiers == CustomKeys.FrameAdvance.modifiers)
+		&& modifiers == CustomKeys.FrameAdvance.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			static DWORD lastTime = 0;
 			if((int)(timeGetTime() - lastTime) > 20)
@@ -937,6 +961,9 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			Settings.FrameAdvance = false;
 			GUI.FrameAdvanceJustPressed = 0;
 			CenterCursor();
+#ifdef RETROACHIEVEMENTS
+			RA_SetPaused(Settings.Paused);
+#endif
 			if(!Settings.Paused)
 				S9xMouseOn();
 			hitHotKey = true;
@@ -1045,6 +1072,10 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			for(i=1; FrameTimings[i]<Settings.FrameTime; ++i)
 				;
 			Settings.FrameTime = FrameTimings[i+1];
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				RA_ClampSpeed();
+#endif
 			ResetFrameTimer ();
 //					sprintf (InfoString, WINPROC_EMUFRAMETIME,
 //						Settings.FrameTime / 1);
@@ -1069,31 +1100,51 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			hitHotKey = true;
 		}
 		if(wParam == CustomKeys.BGL1.key
-		&& modifiers == CustomKeys.BGL1.modifiers)
+		&& modifiers == CustomKeys.BGL1.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 1;
 			S9xDisplayStateChange (WINPROC_BG1, !(Settings.BG_Forced & 1));
 		}
 		if(wParam == CustomKeys.BGL2.key
-		&& modifiers == CustomKeys.BGL2.modifiers)
+		&& modifiers == CustomKeys.BGL2.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 2;
 			S9xDisplayStateChange (WINPROC_BG2, !(Settings.BG_Forced & 2));
 		}
 		if(wParam == CustomKeys.BGL3.key
-		&& modifiers == CustomKeys.BGL3.modifiers)
+		&& modifiers == CustomKeys.BGL3.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 4;
 			S9xDisplayStateChange (WINPROC_BG3, !(Settings.BG_Forced & 4));
 		}
 		if(wParam == CustomKeys.BGL4.key
-		&& modifiers == CustomKeys.BGL4.modifiers)
+		&& modifiers == CustomKeys.BGL4.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 8;
 			S9xDisplayStateChange (WINPROC_BG4, !(Settings.BG_Forced & 8));
 		}
 		if(wParam == CustomKeys.BGL5.key
-		&& modifiers == CustomKeys.BGL5.modifiers)
+		&& modifiers == CustomKeys.BGL5.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.BG_Forced ^= 16;
 			S9xDisplayStateChange (WINPROC_SPRITES, !(Settings.BG_Forced & 16));
@@ -1140,7 +1191,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 			PostMessage(GUI.hWnd,WM_CLOSE,(WPARAM)NULL,(LPARAM)(NULL));
 		}
         if(wParam == CustomKeys.Rewind.key
-		&& modifiers == CustomKeys.Rewind.modifiers)
+		&& modifiers == CustomKeys.Rewind.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
             if(!Settings.Rewinding)
                 S9xMessage (S9X_INFO, 0, GUI.rewindBufferSize?WINPROC_REWINDING_TEXT:WINPROC_REWINDING_DISABLED);
@@ -1222,7 +1277,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 		}
 
 		if(wParam == CustomKeys.Transparency.key
-		&& modifiers == CustomKeys.Transparency.modifiers)
+		&& modifiers == CustomKeys.Transparency.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 //					if (Settings.SixteenBit)
 			{
@@ -1236,7 +1295,11 @@ int HandleKeyMessage(WPARAM wParam, LPARAM lParam)
 //					}
 		}
 		if(wParam == CustomKeys.ClippingWindows.key
-		&& modifiers == CustomKeys.ClippingWindows.modifiers)
+		&& modifiers == CustomKeys.ClippingWindows.modifiers
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 		{
 			Settings.DisableGraphicWindows = !Settings.DisableGraphicWindows;
 			S9xDisplayStateChange (WINPROC_CLIPWIN,
@@ -1563,6 +1626,11 @@ LRESULT CALLBACK WinProc(
 			break;
 		case ID_FILE_MOVIE_PLAY:
 			{
+#ifdef RETROACHIEVEMENTS
+				if (!RA_WarnDisableHardcore("playback a recording"))
+					break;
+#endif
+
 				RestoreGUIDisplay ();  //exit DirectX
 				OpenMovieParams op;
 				memset(&op, 0, sizeof(op));
@@ -1826,6 +1894,10 @@ LRESULT CALLBACK WinProc(
 			break;
 
 		case ID_FILE_EXIT:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_ConfirmLoadNewRom(true))
+				break;
+#endif
             S9xSetPause (PAUSE_EXIT);
             PostMessage (hWnd, WM_CLOSE, 0, 0);
             break;
@@ -2111,6 +2183,9 @@ LRESULT CALLBACK WinProc(
 			Settings.Paused = !Settings.Paused;
 			Settings.FrameAdvance = false;
 			GUI.FrameAdvanceJustPressed = 0;
+#ifdef RETROACHIEVEMENTS
+			RA_SetPaused(Settings.Paused);
+#endif
 			break;
         case ID_FILE_LOAD0:
 			FreezeUnfreezeSlot (0, FALSE);
@@ -2179,6 +2254,10 @@ LRESULT CALLBACK WinProc(
             FreezeUnfreezeDialog(TRUE);
             break;
 		case ID_CHEAT_ENTER:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			while (DialogBox(g_hInst, MAKEINTRESOURCE(IDD_CHEATER), hWnd, DlgCheater) == NC_SEARCHDB)
 			{
@@ -2188,6 +2267,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_CHEAT_SEARCH:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			if(!cheatSearchHWND) // create and show non-modal cheat search window
 			{
@@ -2201,6 +2284,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_CHEAT_SEARCH_MODAL:
+#ifdef RETROACHIEVEMENTS
+			if (!RA_WarnDisableHardcore("edit cheats"))
+				break;
+#endif
 			RestoreGUIDisplay ();
 			DialogBox(g_hInst, MAKEINTRESOURCE(IDD_CHEAT_SEARCH), hWnd, DlgCheatSearch); // modal
 			S9xSaveCheatFile (S9xGetFilename (".cht", CHEAT_DIR));
@@ -2208,6 +2295,10 @@ LRESULT CALLBACK WinProc(
 			break;
 		case ID_CHEAT_APPLY:
 			Settings.ApplyCheats = !Settings.ApplyCheats;
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				break;
+#endif
 			if (!Settings.ApplyCheats){
 				S9xCheatsDisable ();
 				S9xMessage (S9X_INFO, S9X_GAME_GENIE_CODE_ERROR, CHEATS_INFO_DISABLED);
@@ -2251,6 +2342,10 @@ LRESULT CALLBACK WinProc(
 			RestoreSNESDisplay ();
 			break;
 		case ID_FRAME_ADVANCE:
+#ifdef RETROACHIEVEMENTS
+			if (RA_HardcoreModeIsActive())
+				break;
+#endif
 			Settings.Paused = true;
 			Settings.FrameAdvance = true;
 			break;
@@ -2293,6 +2388,13 @@ LRESULT CALLBACK WinProc(
 					}
 				}
 			}
+#if RETROACHIEVEMENTS
+			else if (LOWORD(wParam) >= IDM_RA_MENUSTART && LOWORD(wParam) < IDM_RA_MENUEND)
+			{
+				RA_InvokeDialog(LOWORD(wParam));
+				return 0;
+			}
+#endif
 			break;
         }
         break;
@@ -2312,6 +2414,11 @@ LRESULT CALLBACK WinProc(
 		break;
 
 	case WM_CLOSE:
+#ifdef RETROACHIEVEMENTS
+		if (!RA_ConfirmLoadNewRom(true))
+			return 0;
+#endif
+
 		SaveMainWinPos();
 		break;
 
@@ -3227,6 +3334,10 @@ static void ProcessInput(void)
 #endif
 	S9xWinScanJoypads ();
 
+#ifdef RETROACHIEVEMENTS
+	RA_ProcessInputs();
+#endif
+
 	extern uint32 joypads [8];
 	for(int i = 0 ; i < 8 ; i++)
 		ControlPadFlagsToS9xReportButtons(i, joypads[i]);
@@ -3300,6 +3411,10 @@ int WINAPI WinMain(
 
 	void InitSnes9x (void);
 	InitSnes9x ();
+
+#ifdef RETROACHIEVEMENTS
+	RA_Init();
+#endif
 
 	if(GUI.FullScreen) {
 		GUI.FullScreen = false;
@@ -3391,6 +3506,11 @@ int WINAPI WinMain(
             }
 
 			S9xSetSoundMute(GUI.Mute || Settings.ForcedPause || (Settings.Paused && (!Settings.FrameAdvance || GUI.FAMute)));
+
+#ifdef RETROACHIEVEMENTS
+			if (RA_IsOverlayFullyVisible())
+				ProcessInput();
+#endif
         }
 
 #ifdef NETPLAY_SUPPORT
@@ -3500,6 +3620,10 @@ int WINAPI WinMain(
 
 				S9xMainLoop();
 				GUI.FrameCount++;
+
+#ifdef RETROACHIEVEMENTS
+				RA_DoAchievementsFrame();
+#endif
 			}
 
 #ifdef NETPLAY_SUPPORT
@@ -3561,6 +3685,10 @@ loop_exit:
 	Memory.Deinit();
 
 	ClearExts();
+
+#ifdef RETROACHIEVEMENTS
+	RA_Shutdown();
+#endif
 
 	DeInitRenderFilters();
 
@@ -3918,7 +4046,7 @@ static void CheckMenuStates ()
 	SetMenuItemInfo (GUI.hMenu, ID_FILE_AVI_RECORDING, FALSE, &mii);
 }
 
-static void ResetFrameTimer ()
+void ResetFrameTimer ()
 {
     QueryPerformanceCounter((LARGE_INTEGER*)&PCStart);
 	PCStartTicks = timeGetTime()*1000;
@@ -3945,6 +4073,9 @@ static bool LoadROMPlain(const TCHAR *filename)
 	SetCurrentDirectory(S9xGetDirectoryT(ROM_DIR));
     if (Memory.LoadROM (_tToChar(filename)))
     {
+#ifdef RETROACHIEVEMENTS
+		RA_OnLoadNewRom();
+#endif
 		S9xStartCheatSearch (&Cheat);
         ReInitSound();
 		ResetFrameTimer();
@@ -3967,6 +4098,11 @@ static bool LoadROMMulti(const TCHAR *filename, const TCHAR *filename2)
 }
 
 static bool LoadROM(const TCHAR *filename, const TCHAR *filename2 /*= NULL*/) {
+
+#ifdef RETROACHIEVEMENTS
+	if (!RA_ConfirmLoadNewRom(false))
+		return false;
+#endif
 
 #ifdef NETPLAY_SUPPORT
 	if (Settings.NetPlay && !Settings.NetPlayServer)
@@ -5055,7 +5191,12 @@ INT_PTR CALLBACK DlgAboutProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		WinRefreshDisplay();
 		{
 			TCHAR buf[2048];//find better way of dealing.
+#ifdef RETROACHIEVEMENTS
+			_stprintf(buf, TEXT("RASnes9x ") TEXT(RASNES9X_VERSION_SHORT) TEXT("\r\n\r\n")
+				           DISCLAIMER_TEXT,TEXT(VERSION));
+#else
 			_stprintf(buf,DISCLAIMER_TEXT,TEXT(VERSION));
+#endif
 			SetDlgItemText(hDlg, IDC_DISCLAIMER, buf);
 			SetWindowText(hDlg, ABOUT_DIALOG_TITLE APP_NAME);
 		}
@@ -10930,7 +11071,11 @@ void S9xPostRomInit()
 	// "Cheats are on" message if cheats are on and active,
 	// to make it less likely that someone will think there is some bug because of
 	// a lingering cheat they don't realize is on
-	if (Settings.ApplyCheats)
+	if (Settings.ApplyCheats
+#ifdef RETROACHIEVEMENTS
+		&& !RA_HardcoreModeIsActive()
+#endif
+		)
 	{
 		S9xCheatsEnable();
 		extern struct SCheatData Cheat;
