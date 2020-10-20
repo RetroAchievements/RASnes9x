@@ -11,6 +11,10 @@
 #include "cheats.h"
 #include "bml.h"
 
+#ifdef RETROACHIEVEMENTS
+#include "RetroAchievements.h"
+#endif
+
 static inline char *trim (char *string)
 {
     int start;
@@ -334,6 +338,11 @@ void S9xEnableCheat (SCheat *c)
 void S9xEnableCheatGroup (uint32 num)
 {
     unsigned int i;
+
+#ifdef RETROACHIEVEMENTS
+    if (RA_HardcoreModeIsActive())
+        return;
+#endif
 
     for (i = 0; i < Cheat.g[num].c.size (); i++)
     {
