@@ -2,6 +2,9 @@
 
 #include "RA_BuildVer.h"
 
+#include "../RAInterface/RA_Emulators.h"
+#include "../RAInterface/RA_Consoles.h"
+
 #include "wsnes9x.h"
 #include "../snes9x.h"
 #include "../memmap.h"
@@ -125,23 +128,23 @@ void RA_Init()
 	RA_UpdateAppTitle("");
 }
 
-static unsigned char ByteReader(size_t nOffs)
+static unsigned char ByteReader(unsigned int nOffs)
 {
 	return Memory.RAM[nOffs % 0x20000];
 }
 
-static void ByteWriter(size_t nOffs, unsigned int nVal)
+static void ByteWriter(unsigned int nOffs, unsigned char nVal)
 {
 	if (nOffs < 0x20000)
 		Memory.RAM[nOffs] = static_cast<uint8>(nVal);
 }
 
-static unsigned char ByteReaderSRAM(size_t nOffs)
+static unsigned char ByteReaderSRAM(unsigned int nOffs)
 {
 	return Memory.SRAM[nOffs % s_nSRAMBytes];
 }
 
-static void ByteWriterSRAM( size_t nOffs, unsigned int nVal )
+static void ByteWriterSRAM(unsigned int nOffs, unsigned char nVal)
 {
 	if (nOffs < s_nSRAMBytes)
 		Memory.SRAM[nOffs] = static_cast<uint8>(nVal);
