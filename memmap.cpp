@@ -35,6 +35,10 @@
 #include "display.h"
 #include "sha256.h"
 
+#ifdef RETROACHIEVEMENTS
+#include "RetroAchievements.h"
+#endif
+
 #ifndef SET_UI_COLOR
 #define SET_UI_COLOR(r, g, b) ;
 #endif
@@ -1623,6 +1627,11 @@ bool8 CMemory::LoadROMInt (int32 ROMfillSize)
 	S9xReset();
 
 	S9xDeleteCheats();
+
+#ifdef RETROACHIEVEMENTS
+	RA_OnLoadNewRom();
+#endif
+
 	S9xLoadCheatFile(S9xGetFilename(".cht", CHEAT_DIR));
 
     return (TRUE);
