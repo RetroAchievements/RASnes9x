@@ -2543,6 +2543,10 @@ void CMemory::InitROM (void)
 	}
 
 	// NTSC/PAL
+#ifdef RETROACHIEVEMENTS
+	if (Settings.ForcePAL && !RA_WarnDisableHardcore("force PAL mode"))
+		Settings.ForcePAL = FALSE;
+#endif
 	if (Settings.ForceNTSC)
 		Settings.PAL = FALSE;
 	else

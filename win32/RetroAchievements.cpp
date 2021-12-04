@@ -84,6 +84,21 @@ void RA_ClampSpeed()
 static void ResetEmulator()
 {
 	// ensure speed is not below normal
+	if (Settings.PAL)
+	{
+		// this line is copied from CMemory::InitROM
+		if (!Settings.BS && (((Memory.ROMRegion >= 2) && (Memory.ROMRegion <= 12)) || Memory.ROMRegion == 18)) // 18 is used by "Tintin in Tibet (Europe) (En,Es,Sv)"
+		{
+			// auto-detected PAL, it's OK
+		}
+		else
+		{
+			// PAL not auto-detected. It must have been forced. Switch to NTSC.
+			Settings.PAL = FALSE;
+			Timings.V_Max = Timings.V_Max_Master = SNES_MAX_NTSC_VCOUNTER;
+		}
+	}
+
 	RA_ClampSpeed();
 	extern void ResetFrameTimer();
 	ResetFrameTimer();
