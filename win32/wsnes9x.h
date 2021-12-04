@@ -26,12 +26,18 @@
 #include <dsound.h>
 #endif
 #include "rsrc/resource.h"
+#include "port.h"
 
 #define COUNT(a) (sizeof (a) / sizeof (a[0]))
 #define MAX_AUDIO_NAME_LENGTH 1024
 
 #define MAX_RECENT_GAMES_LIST_SIZE 32
 #define MAX_RECENT_HOSTS_LIST_SIZE 16
+
+#define SAVE_SLOTS_PER_BANK 10
+#define LAST_SAVE_SLOT_IN_BANK (SAVE_SLOTS_PER_BANK - 1)
+#define NUM_SAVE_BANKS 10
+#define LAST_SAVE_BANK (NUM_SAVE_BANKS - 1)
 
 #include "_tfwopen.h"
 #ifdef UNICODE
@@ -65,6 +71,7 @@ enum RenderFilter{
 	FILTER_SIMPLE2X,
 	FILTER_SCANLINES,
 	FILTER_TVMODE,
+	FILTER_BLARGGRF,
 	FILTER_BLARGGCOMP,
 	FILTER_BLARGGSVID,
 	FILTER_BLARGGRGB,
@@ -186,6 +193,7 @@ struct sGUI {
 
 	bool InactivePause;
 	bool CustomRomOpen;
+	bool ConfirmSaveLoad;
     bool FASkipsNonInput;
     bool FAMute;
     int  ScreenDepth;
@@ -194,6 +202,7 @@ struct sGUI {
     int  BlueShift;
     int  ControlForced;
 	int  CurrentSaveSlot;
+	int  CurrentSaveBank;
     int  MaxRecentGames;
 	int  ControllerOption;
 	int  ValidControllerOptions;
@@ -295,8 +304,8 @@ struct SCustomKeys {
 	SCustomKey ScopePause;
 	SCustomKey FrameCount;
 	SCustomKey ReadOnly;
-	SCustomKey Save [10];
-	SCustomKey Load [10];
+	SCustomKey Save [SAVE_SLOTS_PER_BANK];
+	SCustomKey Load [SAVE_SLOTS_PER_BANK];
 	SCustomKey FastForward;
 	SCustomKey FastForwardToggle;
 	SCustomKey ShowPressed;
@@ -305,21 +314,21 @@ struct SCustomKeys {
 	SCustomKey SlotMinus;
 	SCustomKey SlotSave;
 	SCustomKey SlotLoad;
+	SCustomKey BankPlus;
+	SCustomKey BankMinus;
+    SCustomKey DialogSave;
+    SCustomKey DialogLoad;
 	SCustomKey BGL1;
 	SCustomKey BGL2;
 	SCustomKey BGL3;
 	SCustomKey BGL4;
 	SCustomKey BGL5;
 	SCustomKey ClippingWindows;
-//	SCustomKey BGLHack;
 	SCustomKey Transparency;
-//  SCustomKey GLCube;
-//	SCustomKey HDMA;
-//	SCustomKey InterpMode7;
 	SCustomKey JoypadSwap;
 	SCustomKey SwitchControllers;
 	SCustomKey TurboA, TurboB, TurboY, TurboX, TurboL, TurboR, TurboStart, TurboSelect, TurboLeft, TurboUp, TurboRight, TurboDown;
-	SCustomKey SelectSave [10];
+	SCustomKey SelectSave [SAVE_SLOTS_PER_BANK];
 	SCustomKey ResetGame;
 	SCustomKey ToggleCheats;
 	SCustomKey QuitS9X;
@@ -456,5 +465,11 @@ int GetFilterScale(RenderFilter filterID);
 bool GetFilterHiResSupport(RenderFilter filterID);
 const TCHAR * S9xGetDirectoryT (enum s9x_getdirtype);
 RECT GetWindowMargins(HWND hwnd, UINT width);
+void GetSlotFilename(int slot, char filename[_MAX_PATH + 1]);
+void FreezeUnfreezeSlot(int slot, bool8 freeze);
+void FreezeUnfreezeDialog(bool8 freeze);
+void FreezeUnfreezeDialogPreview(bool8 freeze);
+void FreezeUnfreeze(const char *filename, bool8 freeze);
+bool UnfreezeScreenshotSlot(int slot, uint16 **image_buffer, int &width, int &height);
 
 #endif // !defined(SNES9X_H_INCLUDED)
