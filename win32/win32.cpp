@@ -31,9 +31,6 @@
 
 #include <math.h>
 
-BYTE *ScreenBuf = NULL;
-BYTE *ScreenBuffer = NULL;
-
 struct SJoyState Joystick [16];
 uint32 joypads [8];
 bool8 do_frame_adjust=false;
@@ -51,7 +48,6 @@ static int avi_image_size = 0;
 static uint32 avi_skip_frames = 0;
 static bool pre_avi_soundsync = true;
 static uint32 pre_avi_soundinputrate = 32000;
-void DoAVIOpen(const char* filename);
 void DoAVIClose(int reason);
 
 void S9xWinScanJoypads ();
@@ -94,19 +90,6 @@ void S9xGraphicsMode ()
 void S9xExit( void)
 {
     SendMessage (GUI.hWnd, WM_COMMAND, ID_FILE_EXIT, 0);
-}
-
-const char *S9xGetFilename (const char *ex, enum s9x_getdirtype dirtype)
-{
-    static char filename [PATH_MAX + 1];
-    char dir [_MAX_DIR + 1];
-    char drive [_MAX_DRIVE + 1];
-    char fname [_MAX_FNAME + 1];
-    char ext [_MAX_EXT + 1];
-   _splitpath (Memory.ROMFilename, drive, dir, fname, ext);
-   _snprintf(filename, sizeof(filename), "%s" SLASH_STR "%s%s",
-             S9xGetDirectory(dirtype), fname, ex);
-    return (filename);
 }
 
 #define IS_SLASH(x) ((x) == TEXT('\\') || (x) == TEXT('/'))
@@ -175,7 +158,7 @@ const TCHAR *S9xGetDirectoryT (enum s9x_getdirtype dirtype)
 		  break;
 
 	  case ROMFILENAME_DIR: {
-			lstrcpy(filename, _tFromChar(Memory.ROMFilename));
+			lstrcpy(filename, _tFromChar(Memory.ROMFilename.c_str()));
 			if(!filename[0])
 				rv = GUI.RomDir;
 			for(int i=lstrlen(filename); i>=0; i--){
@@ -201,30 +184,28 @@ const TCHAR *S9xGetDirectoryT (enum s9x_getdirtype dirtype)
 	return rv;
 }
 
-const char *S9xGetDirectory (enum s9x_getdirtype dirtype)
+std::string S9xGetDirectory (enum s9x_getdirtype dirtype)
 {
-	static char path[PATH_MAX]={0};
-	strncpy(path,_tToChar(S9xGetDirectoryT(dirtype)),PATH_MAX-1);
-
-	return path;
+	return std::string(_tToChar(S9xGetDirectoryT(dirtype)));
 }
 
-const char *S9xGetFilenameInc (const char *e, enum s9x_getdirtype dirtype)
+std::string S9xGetFilenameInc (std::string e, enum s9x_getdirtype dirtype)
 {
-    static char filename [PATH_MAX + 1];
-    char dir [_MAX_DIR + 1];
-    char drive [_MAX_DRIVE + 1];
-    char fname [_MAX_FNAME + 1];
-    char ext [_MAX_EXT + 1];
-    unsigned int i=0;
-    const char *d;
+    std::string filename;
 
-    _splitpath (Memory.ROMFilename, drive, dir, fname, ext);
-    d=S9xGetDirectory(dirtype);
+    auto split = splitpath(Memory.ROMFilename);
+    std::string directory_string = S9xGetDirectory(dirtype);
+
+    unsigned int i = 0;
     do {
-        _snprintf(filename, sizeof(filename), "%s\\%s%03d%s", d, fname, i, e);
+        std::string new_extension = std::to_string(i);
+        while (new_extension.length() < 3)
+            new_extension = "0" + new_extension;
+        new_extension += e;
+
+        filename = makepath("", directory_string, split.stem, new_extension);
         i++;
-    } while(_taccess (_tFromChar(filename), 0) == 0 && i!=0);
+    } while(_taccess(_tFromChar(filename.c_str()), 0) == 0 && i < 1000);
 
     return (filename);
 }
@@ -844,19 +825,11 @@ void InitSnes9x( void)
 //    generate_offsets_h (0, NULL);
 //    fclose (offsets_h);
 //#endif
-
+	S9xCustomDisplayString = S9xWinDisplayString;
     Memory.Init();
 
 	extern void S9xPostRomInit();
 	Memory.PostRomInitFunc = S9xPostRomInit;
-
-    ScreenBuf = new BYTE [EXT_PITCH * EXT_HEIGHT_WITH_CENTERING];
-    ScreenBuffer = ScreenBuf + EXT_OFFSET_WITH_CENTERING;
-    memset (ScreenBuf, 0, EXT_PITCH * EXT_HEIGHT_WITH_CENTERING);
-
-    GFX.Pitch = EXT_PITCH;
-    GFX.RealPPL = EXT_PITCH;
-	GFX.Screen = (uint16*)(ScreenBuffer);
 
 	InitializeCriticalSection(&GUI.SoundCritSect);
     GUI.SoundSyncEvent = CreateEvent(NULL,TRUE,TRUE,NULL);
@@ -873,9 +846,6 @@ void InitSnes9x( void)
 }
 void DeinitS9x()
 {
-	if(ScreenBuf)
-		delete [] ScreenBuf;
-
 	DeleteCriticalSection(&GUI.SoundCritSect);
     CloseHandle(GUI.SoundSyncEvent);
 	CoUninitialize();
@@ -939,7 +909,7 @@ void DeinitS9x()
 
 void S9xAutoSaveSRAM ()
 {
-    Memory.SaveSRAM (S9xGetFilename (".srm", SRAM_DIR));
+    Memory.SaveSRAM (S9xGetFilename (".srm", SRAM_DIR).c_str());
 }
 
 void S9xSetPause (uint32 mask)
@@ -1198,7 +1168,7 @@ void DoAVIOpen(const TCHAR* filename)
 	AVISetFramerate(framerate, frameskip, GUI.AVIOut);
 
 	avi_width = SNES_WIDTH;
-	avi_height = GUI.HeightExtend ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
+	avi_height = Settings.ShowOverscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
 	avi_skip_frames = Settings.SkipFrames;
 
 	if(GUI.AVIHiRes) {

@@ -4,10 +4,17 @@
    For further information, consult the LICENSE file in the root directory.
 \*****************************************************************************/
 
+
 #include "CWaveOut.h"
+#include <mmdeviceapi.h> // needs to be before snes9x.h, otherwise conflicts with SetFlags macro
+#include <Functiondiscoverykeys_devpkey.h>
 #include "../snes9x.h"
 #include "../apu/apu.h"
 #include "wsnes9x.h"
+#include <map>
+
+#define DRV_QUERYFUNCTIONINSTANCEID       (DRV_RESERVED + 17)
+#define DRV_QUERYFUNCTIONINSTANCEIDSIZE   (DRV_RESERVED + 18)
 
 CWaveOut::CWaveOut(void)
 {
@@ -20,17 +27,25 @@ CWaveOut::~CWaveOut(void)
     DeInitSoundOutput();
 }
 
-void CALLBACK WaveCallback(HWAVEOUT hWave, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+void CALLBACK CWaveOut::WaveCallback(HWAVEOUT hWave, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
 {
+	CWaveOut *wo = (CWaveOut*)dwUser;
     if (uMsg == WOM_DONE)
     {
-        InterlockedDecrement(((volatile LONG *)dwUser));
+        InterlockedDecrement(&wo->bufferCount);
         SetEvent(GUI.SoundSyncEvent);
     }
+	else if (uMsg == WOM_CLOSE) // also sent on device removals
+	{
+		// this stops any output from being sent to the non existing device
+		wo->initDone = false;
+	}
 }
 
 bool CWaveOut::SetupSound()
 {
+	DeInitSoundOutput();
+
     WAVEFORMATEX wfx;
     wfx.wFormatTag = WAVE_FORMAT_PCM;
     wfx.nChannels = 2;
@@ -43,7 +58,7 @@ bool CWaveOut::SetupSound()
 	// subtract -1, we added "Default" as first index - Default will yield -1, which is WAVE_MAPPER
 	int device_index = FindDeviceIndex(GUI.AudioDevice) - 1;
 
-    waveOutOpen(&hWaveOut, device_index, &wfx, (DWORD_PTR)WaveCallback, (DWORD_PTR)&bufferCount, CALLBACK_FUNCTION);
+    waveOutOpen(&hWaveOut, device_index, &wfx, (DWORD_PTR)WaveCallback, (DWORD_PTR)this, CALLBACK_FUNCTION);
 
     UINT32 blockTime = GUI.SoundBufferSize / blockCount;
     singleBufferSamples = (Settings.SoundPlaybackRate * blockTime) / 1000;
@@ -91,7 +106,7 @@ bool CWaveOut::InitSoundOutput()
 
 void CWaveOut::DeInitSoundOutput()
 {
-    if (!initDone)
+    if (!hWaveOut)
         return;
 
     StopPlayback();
@@ -109,6 +124,7 @@ void CWaveOut::DeInitSoundOutput()
     waveHeaders.clear();
 
     waveOutClose(hWaveOut);
+	hWaveOut = NULL;
 
     initDone = false;
 }
@@ -226,38 +242,113 @@ void CWaveOut::ProcessSound()
 
 std::vector<std::wstring> CWaveOut::GetDeviceList()
 {
-	std::vector<std::wstring> device_list;
+    std::vector<std::wstring> device_list;
 
-	UINT num_devices = waveOutGetNumDevs();
+    device_list.push_back(_T("Default"));
 
-	device_list.push_back(_T("Default"));
+    std::map<std::wstring, std::wstring> endpointId_deviceName_map;
 
-	for (unsigned int i = 0; i < num_devices; i++)
-	{
-		WAVEOUTCAPS caps;
-		if(waveOutGetDevCaps(i, &caps, sizeof(WAVEOUTCAPS)) == MMSYSERR_NOERROR)
-		{
-			device_list.push_back(caps.szPname);
-		}
-	}
+    // try to get device names via multimedia device enumerator, waveOut has a 31 character limit on device names
+    // save them in a map with their endpoint id to later match to waveOut devices
+    IMMDeviceEnumerator* deviceEnumerator;
+    HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator), (LPVOID*)&deviceEnumerator);
+    if (SUCCEEDED(hr))
+    {
+        IMMDeviceCollection* renderDevices;
+        hr = deviceEnumerator->EnumAudioEndpoints(eRender, DEVICE_STATEMASK_ALL, &renderDevices);
+        if (SUCCEEDED(hr))
+        {
+            UINT count;
+            renderDevices->GetCount(&count);
+            for (int i = 0; i < count; i++)
+            {
+                IMMDevice* renderDevice = NULL;
+                if (renderDevices->Item(i, &renderDevice) != S_OK)
+                {
+                    continue;
+                }
+                WCHAR* pstrEndpointId = NULL;
+                hr = renderDevice->GetId(&pstrEndpointId);
+                if (SUCCEEDED(hr))
+                {
+                    std::wstring strEndpoint = pstrEndpointId;
+                    CoTaskMemFree(pstrEndpointId);
+                    IPropertyStore* propStore;
+                    PROPVARIANT propVar;
+                    PropVariantInit(&propVar);
+                    hr = renderDevice->OpenPropertyStore(STGM_READ, &propStore);
+                    if (SUCCEEDED(hr))
+                    {
+                        hr = propStore->GetValue(PKEY_Device_FriendlyName, &propVar);
+                    }
+                    if (SUCCEEDED(hr) && propVar.vt == VT_LPWSTR)
+                    {
+                        endpointId_deviceName_map[strEndpoint] = propVar.pwszVal;
+                    }
+                    PropVariantClear(&propVar);
+                }
 
-	return device_list;
+                renderDevice->Release();
+            }
+            renderDevices->Release();
+        }
+        deviceEnumerator->Release();
+    }
+
+    // enum waveOut devices, using mapped names if available
+    UINT num_devices = waveOutGetNumDevs();
+    for (unsigned int i = 0; i < num_devices; i++)
+    {
+        WAVEOUTCAPS caps;
+        MMRESULT mmr;
+        mmr = waveOutGetDevCaps(i, &caps, sizeof(WAVEOUTCAPS));
+        if (mmr != MMSYSERR_NOERROR)
+        {
+            continue;
+        }
+
+        // get endpoint id, called function instance id in waveOutMessage
+        size_t endpointIdSize = 0;
+        mmr = waveOutMessage((HWAVEOUT)IntToPtr(i), DRV_QUERYFUNCTIONINSTANCEIDSIZE, (DWORD_PTR)&endpointIdSize, NULL);
+        if (mmr != MMSYSERR_NOERROR)
+        {
+            continue;
+        }
+        std::vector<wchar_t> endpointIdBuffer(endpointIdSize);
+        mmr = waveOutMessage((HWAVEOUT)IntToPtr(i), DRV_QUERYFUNCTIONINSTANCEID, (DWORD_PTR)endpointIdBuffer.data(), endpointIdSize);
+        if (mmr != MMSYSERR_NOERROR)
+        {
+            continue;
+        }
+        std::wstring strEndpoint(endpointIdBuffer.data());
+
+        // use name retrieved from mmdevice above if available
+        std::wstring devName = caps.szPname;
+        if (endpointId_deviceName_map.count(strEndpoint))
+        {
+            devName = endpointId_deviceName_map[strEndpoint];
+        }
+
+        device_list.push_back(devName);
+    }
+
+    return device_list;
 }
 
 int CWaveOut::FindDeviceIndex(TCHAR *audio_device)
 {
-	std::vector<std::wstring> device_list = GetDeviceList();
+    std::vector<std::wstring> device_list = GetDeviceList();
 
-	int index = 0;
+    int index = 0;
 
-	for (int i = 0; i < device_list.size(); i++)
-	{
-		if (_tcsstr(device_list[i].c_str(), audio_device) != NULL)
-		{
-			index = i;
-			break;
-		}
-	}
+    for (int i = 0; i < device_list.size(); i++)
+    {
+        if (_tcsstr(device_list[i].c_str(), audio_device) != NULL)
+        {
+            index = i;
+            break;
+        }
+    }
 
-	return index;
+    return index;
 }

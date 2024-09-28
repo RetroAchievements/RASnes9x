@@ -9,11 +9,11 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "glslang/glslang/Public/ShaderLang.h"
-#include "glslang/SPIRV/GlslangToSpv.h"
-#include "glslang/StandAlone/ResourceLimits.h"
-#include "SPIRV-Cross/spirv_cross.hpp"
-#include "SPIRV-Cross/spirv_glsl.hpp"
+#include "external/glslang/glslang/Public/ShaderLang.h"
+#include "external/glslang/SPIRV/GlslangToSpv.h"
+#include "external/glslang/glslang/Public/ResourceLimits.h"
+#include "external/SPIRV-Cross/spirv_cross.hpp"
+#include "external/SPIRV-Cross/spirv_glsl.hpp"
 
 std::string GLSLShader::slang_get_stage(std::vector<std::string> &lines,
                                         std::string name)
@@ -113,14 +113,14 @@ GLint GLSLShader::slang_compile(std::vector<std::string> &lines,
     std::string debug;
     auto forbid_includer = glslang::TShader::ForbidIncluder();
 
-    if (!shader.preprocess(&glslang::DefaultTBuiltInResource, 100, ENoProfile, false,
+    if (!shader.preprocess(GetDefaultResources(), 100, ENoProfile, false,
                            false, messages, &debug, forbid_includer))
     {
         puts(debug.c_str());
         return -1;
     }
 
-    if (!shader.parse(&glslang::DefaultTBuiltInResource, 100, false, messages))
+    if (!shader.parse(GetDefaultResources(), 100, false, messages))
     {
         puts(shader.getInfoLog());
         puts(shader.getInfoDebugLog());

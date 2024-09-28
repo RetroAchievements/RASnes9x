@@ -14,7 +14,7 @@
 void snes9x_preferences_create(Snes9xConfig *config);
 void snes9x_preferences_open(Snes9xWindow *window);
 
-class Snes9xPreferences : public GtkBuilderWindow
+class Snes9xPreferences final : public GtkBuilderWindow
 {
   public:
     Snes9xPreferences(Snes9xConfig *config);
@@ -24,7 +24,7 @@ class Snes9xPreferences : public GtkBuilderWindow
     int get_focused_binding();
     void store_binding(const char *string, Binding binding);
     int hw_accel_value(int combo_value);
-    int combo_value(int hw_accel);
+    int combo_value(std::string driver_name);
     void focus_next();
     void swap_with();
     void clear_binding(const char *name);
@@ -49,6 +49,7 @@ class Snes9xPreferences : public GtkBuilderWindow
   private:
     void get_settings_from_dialog();
     void move_settings_to_dialog();
+    Glib::ustring format_sound_input_rate_value(double);
 };
 
 #endif /* __GTK_PREFERENCES_H */

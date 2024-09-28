@@ -5,7 +5,7 @@
 \*****************************************************************************/
 
 #include "gtk_s9x.h"
-#include "../filter/xbrz.h"
+#include "filter/xbrz.h"
 #include <vector>
 
 #define CONVERT_16_TO_32(pixel) \
@@ -103,17 +103,17 @@ void xBRZ(uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int wi
     }
 }
 
-void filter_2xBRZ(uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int width, int height)
+void filter_2xBRZ(uint8 *srcPtr, int srcPitch, uint8 *dstPtr, int dstPitch, int width, int height)
 {
     xBRZ(srcPtr, srcPitch, dstPtr, dstPitch, width, height, 2);
 }
 
-void filter_3xBRZ(uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int width, int height)
+void filter_3xBRZ(uint8 *srcPtr, int srcPitch, uint8 *dstPtr, int dstPitch, int width, int height)
 {
     xBRZ(srcPtr, srcPitch, dstPtr, dstPitch, width, height, 3);
 }
 
-void filter_4xBRZ(uint8 *srcPtr, uint32 srcPitch, uint8 *dstPtr, uint32 dstPitch, int width, int height)
+void filter_4xBRZ(uint8 *srcPtr, int srcPitch, uint8 *dstPtr, int dstPitch, int width, int height)
 {
     xBRZ(srcPtr, srcPitch, dstPtr, dstPitch, width, height, 4);
 }

@@ -37,6 +37,7 @@ class GtkBuilderWindow
 
     void enable_widget(const char *name, bool state);
     void show_widget(const char *name, bool state);
+    void set_label(const char * const name, const char * const label);
     void set_button_label(const char *name, const char *label);
     bool get_check(const char *name);
     int get_entry_value(const char *name);
@@ -49,6 +50,7 @@ class GtkBuilderWindow
     void set_check(const char *name, bool value);
     void set_entry_value(const char *name, unsigned int value);
     void set_entry_text(const char *name, const char *text);
+    void set_entry_text(const char *name, const std::string &text);
     void set_combo(const char *name, unsigned char value);
     void set_spin(const char *name, double value);
     void set_slider(const char *name, float value);

@@ -32,7 +32,7 @@
 #define RIGHTSHIFT_int16_IS_SAR
 #define RIGHTSHIFT_int32_IS_SAR
 #ifndef __LIBRETRO__
-#define SNES_JOY_READ_CALLBACKS
+
 #endif //__LIBRETRO__
 #endif
 
@@ -99,11 +99,7 @@ __extension__
 #endif
 typedef long long			int64;
 typedef unsigned long long	uint64;
-#ifdef PTR_NOT_INT
 typedef size_t				pint;
-#else   // __PTR_NOT_INT
-typedef size_t					pint;
-#endif  // __PTR_NOT_INT
 #endif	//  __WIN32__
 #endif	// HAVE_STDINT_H
 #endif	// snes9x_types_defined
@@ -115,40 +111,33 @@ typedef size_t					pint;
 #define FALSE	0
 #endif
 
-#define START_EXTERN_C	extern "C" {
-#define END_EXTERN_C	}
-
 #ifndef __WIN32__
 #ifndef PATH_MAX
-#define PATH_MAX	1024
+#define PATH_MAX        1024
 #endif
-#define _MAX_DRIVE	1
-#define _MAX_DIR	PATH_MAX
-#define _MAX_FNAME	PATH_MAX
-#define _MAX_EXT	PATH_MAX
-#define _MAX_PATH	PATH_MAX
 #else
 #ifndef PATH_MAX
-#define PATH_MAX	_MAX_PATH
+#define PATH_MAX        _MAX_PATH
 #endif
 #endif
 
-#ifndef __WIN32__
-void _splitpath (const char *, char *, char *, char *, char *);
-void _makepath (char *, const char *, const char *, const char *, const char *);
+#include "fscompat.h"
+
 #define S9xDisplayString	DisplayStringFromBottom
-#else   // __WIN32__
-#define snprintf _snprintf
-#define strcasecmp	stricmp
-#define strncasecmp	strnicmp
-#ifndef __LIBRETRO__
-void WinDisplayStringFromBottom(const char *string, int linesFromBottom, int pixelsFromLeft, bool allowWrap);
-#define S9xDisplayString	WinDisplayStringFromBottom
+#ifdef __WIN32__
+#if !defined(SNES9X_QT) && !defined(__LIBRETRO__)
 void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #define SET_UI_COLOR(r,g,b) SetInfoDlgColor(r,g,b)
-#else   // __LIBRETRO__
-#define S9xDisplayString	DisplayStringFromBottom
-#endif  // __LIBRETRO__
+#endif
+#ifndef snprintf
+   #define snprintf _snprintf
+#endif
+#ifndef strcasecmp
+   #define strcasecmp	stricmp
+#endif
+#ifndef strncasecmp
+   #define strncasecmp	strnicmp
+#endif
 #endif  // __WIN32__
 
 #if defined(__DJGPP) || defined(__WIN32__)
@@ -157,15 +146,6 @@ void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #else
 #define SLASH_STR	"/"
 #define SLASH_CHAR	'/'
-#endif
-
-#ifndef SIG_PF
-#define SIG_PF	void (*) (int)
-#endif
-
-#ifdef __linux
-#define TITLE "Snes9x: Linux"
-#define SYS_CONFIG_FILE "/etc/snes9x/snes9x.conf"
 #endif
 
 #ifndef TITLE

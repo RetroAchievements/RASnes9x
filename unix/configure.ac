@@ -1,6 +1,6 @@
-AC_PREREQ([2.60])
-AC_INIT([Snes9x], [1.60], [], [snes9x])
-AC_REVISION([$Revision: 1.60 $])
+AC_PREREQ([2.71])
+AC_INIT([Snes9x],[1.63],[],[snes9x])
+AC_REVISION([$Revision: 1.63 $])
 
 AC_CONFIG_SRCDIR([unix.cpp])
 
@@ -23,8 +23,7 @@ AC_DEFUN([AC_S9X_COMPILER_FLAG],
 		OLD_CXXFLAGS="[$]CXXFLAGS"
 		CXXFLAGS="[$]OLD_CXXFLAGS $1"
 
-		AC_TRY_RUN(
-		[
+		AC_RUN_IFELSE([AC_LANG_SOURCE([[
 			int	foo;
 
 			int	main (int argc, char **argv)
@@ -37,8 +36,7 @@ AC_DEFUN([AC_S9X_COMPILER_FLAG],
 
 				return (argc);
 			}
-		],
-		[snes9x_cv_option_$2="yes"], [snes9x_cv_option_$2="no"])
+		]])],[snes9x_cv_option_$2="yes"],[snes9x_cv_option_$2="no"],[snes9x_cv_option_$2="yes"])
 	])
 
 	CXXFLAGS="[$]OLD_CXXFLAGS"
@@ -139,7 +137,7 @@ AC_MSG_CHECKING([whether the OS is Linux])
 
 AC_CACHE_VAL([snes9x_cv_linux_os],
 [
-	case "$target" in
+	case "$host" in
 		*-*-linux*)
 			snes9x_cv_linux_os="yes"
 			;;
@@ -350,14 +348,12 @@ AC_CHECK_HEADERS([unistd.h sys/socket.h])
 if test "x$snes9x_have_stdint_h" = "x"; then
 	AC_MSG_CHECKING([whether the size of pointer is int])
 	
-	AC_TRY_RUN(
-	[
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 		int main (void)
 		{
 			return (!(sizeof(void *) == sizeof(int)));
 		}
-	],
-	[snes9x_ptr_is_int="yes"], [snes9x_ptr_is_int="no"])
+	]])],[snes9x_ptr_is_int="yes"],[snes9x_ptr_is_int="no"],[])
 	
 	if test "x$snes9x_ptr_is_int" = "xyes"; then
 		AC_MSG_RESULT(yes)
@@ -376,8 +372,7 @@ AC_DEFUN([AC_S9X_CHECK_SAR],
 	OLD_CXXFLAGS="[$]CXXFLAGS"
 	CXXFLAGS="[$]OLD_CXXFLAGS $snes9x_have_stdint_h"
 
-	AC_TRY_RUN(
-	[
+	AC_RUN_IFELSE([AC_LANG_SOURCE([[
 		#ifdef HAVE_STDINT_H
 		#include <stdint.h>
 		typedef int8_t			int8;
@@ -403,8 +398,7 @@ AC_DEFUN([AC_S9X_CHECK_SAR],
 
 			return (i < 0 ? 0 : 1);
 		}
-	],
-	[snes9x_sar_$1="yes"], [snes9x_sar_$1="no"])
+	]])],[snes9x_sar_$1="yes"],[snes9x_sar_$1="no"],[snes9x_sar_$1=$GCC])
 
 	CXXFLAGS="[$]OLD_CXXFLAGS"
 
@@ -445,6 +439,22 @@ if test "x$enable_xvideo" = "xyes"; then
 	])
 fi
 
+# Check if we can build with libyuv hardware acceleration I420 conversion support
+AC_ARG_ENABLE([libyuv],
+    [AS_HELP_STRING([--enable-libyuv],
+        [enable libyuv I420 conversion support if available (default: yes)])],
+    [], [enable_libyuv="yes"])
+
+if test "x$enable_libyuv" = "xyes"; then
+    enable_libyuv="no"
+    AC_CHECK_HEADER([libyuv.h],
+    [
+        enable_libyuv="yes"
+        S9XLIBS="$S9XLIBS -lyuv"
+        S9XDEFS="$S9XDEFS -DUSE_LIBYUV"
+    ])
+fi
+
 # Check if we can build with Xinerama multi-monitor support
 AC_ARG_ENABLE([xinerama],
 	[AS_HELP_STRING([--enable-xinerama],
@@ -469,14 +479,16 @@ AC_ARG_ENABLE([sound],
 	[], [enable_sound="yes"])
 
 if test "x$enable_sound" = "xyes"; then
-	AC_MSG_CHECKING([whether sound is supported on this platform])
-	if test "x$snes9x_cv_linux_os" = "xyes"; then
-		AC_MSG_RESULT([yes])
-	else
-		AC_MSG_RESULT([no])
-		AC_MSG_WARN([Your OS is not Linux. Build without sound support.])
+	AC_CHECK_HEADER([sys/soundcard.h],
+	[
+		AC_CHECK_LIB([ossaudio], [_oss_ioctl], [
+			S9XLIBS="$S9XLIBS -lossaudio"
+		], [], [])
+	],
+	[
+		AC_MSG_WARN([Your OS does not have OSS. Build without sound support.])
 		enable_sound="no"
-	fi
+	])
 fi
 
 if test "x$enable_sound" = "xyes"; then
@@ -487,6 +499,25 @@ if test "x$enable_sound" = "xyes"; then
 	])
 else
 	S9XDEFS="$S9XDEFS -DNOSOUND"
+fi
+
+# Check if we can build with alsa support
+AC_ARG_ENABLE([sound-alsa],
+    [AS_HELP_STRING([--enable-sound-alsa],
+        [enable Alsa if available (default: yes)])],
+    [], [enable_sound_alsa="yes"])
+
+if test "x$enable_sound_alsa" = "xyes"; then
+    enable_sound_alsa="no"
+    AC_CHECK_HEADER([alsa/asoundlib.h],
+    [
+        enable_sound_alsa="yes"
+        enable_sound="yes"
+        S9XLIBS="$S9XLIBS -lasound"
+        #in case '--disable-sound' and 'enable-sound-alsa'
+        S9XDEFS=$(echo $S9XDEFS|sed 's/-DNOSOUND//g; s/-DUSE_THREADS//g')
+        S9XDEFS="$S9XDEFS -DALSA"
+    ])
 fi
 
 # Output.
@@ -526,8 +557,10 @@ libs................. $S9XLIBS
 
 features:
 Xvideo support....... $enable_xvideo
+libyuv support....... $enable_libyuv
 Xinerama support..... $enable_xinerama
 sound support........ $enable_sound
+alsa support......... $enable_sound_alsa
 screenshot support... $enable_screenshot
 netplay support...... $enable_netplay
 gamepad support...... $enable_gamepad
@@ -544,4 +577,5 @@ EOF
 
 cat config.info
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

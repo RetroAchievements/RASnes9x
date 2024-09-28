@@ -55,9 +55,11 @@ static BOOST::uint8_t const initial_regs [SPC_DSP::register_count] =
 
 // Access global DSP register
 #define REG(n)      m.regs [r_##n]
+#define XREG(n)     m.external_regs [r_##n]
 
 // Access voice DSP register
 #define VREG(r,n)   r [v_##n]
+#define XVREG(r,n)  (m.external_regs + (r - m.regs))[v_##n]
 
 #define WRITE_SAMPLES( l, r, out ) \
 {\
@@ -670,9 +672,10 @@ inline void SPC_DSP::decode_brr( voice_t* v )
 
 		// Shift sample based on header
 		int const shift = header >> 4;
-		s = (s << shift) >> 1;
-		if ( shift >= 0xD ) // handle invalid range
-			s = (s >> 25) << 11; // same as: s = (s < 0 ? -0x800 : 0)
+		if (shift <= 12)
+			s = (s << shift) >> 1;
+		else
+			s &= ~0x7ff;
 
 		// Apply IIR filter (8 is the most commonly used)
 		int const filter = header & 0x0C;
@@ -927,6 +930,7 @@ inline VOICE_CLOCK( V7 )
 {
 	// Update ENDX
 	REG(endx) = m.endx_buf;
+	XREG(endx) = m.endx_buf;
 
 	m.envx_buf = v->t_envx_out;
 }
@@ -934,11 +938,13 @@ inline VOICE_CLOCK( V8 )
 {
 	// Update OUTX
 	VREG(v->regs,outx) = m.outx_buf;
+	XVREG(v->regs,outx) = m.outx_buf;
 }
 inline VOICE_CLOCK( V9 )
 {
 	// Update ENVX
 	VREG(v->regs,envx) = m.envx_buf;
+	XVREG(v->regs,envx) = m.envx_buf;
 }
 
 // Most voices do all these in one clock, so make a handy composite
@@ -1237,7 +1243,9 @@ void SPC_DSP::soft_reset()
 
 void SPC_DSP::load( uint8_t const regs [register_count] )
 {
-	memcpy( m.regs, regs, sizeof m.regs );
+	memcpy( m.external_regs, regs, sizeof m.regs );
+	memset( m.regs, 0, sizeof m.regs);
+	m.regs[r_flg] = 0xE0;
 	memset( &m.regs [register_count], 0, offsetof (state_t,ram) - register_count );
 
 	// Internal state
@@ -1398,6 +1406,7 @@ void SPC_DSP::copy_state( unsigned char** io, copy_func_t copy )
 	SPC_COPY( uint16_t, m.t_echo_ptr );
 	SPC_COPY(  uint8_t, m.t_looped );
 
+	copier.copy(m.external_regs, register_count);
 	copier.extra();
 }
 #endif
