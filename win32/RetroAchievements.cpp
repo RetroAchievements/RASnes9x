@@ -197,7 +197,7 @@ static unsigned int BlockReaderSRAM(unsigned int nAddress, unsigned char* pBuffe
 
 static unsigned char ByteReaderIRAM(unsigned int nOffs)
 {
-	if (Memory.FillRAM && nOffs < 0x7FF)
+	if (Memory.FillRAM && nOffs < 0x800)
 		return Memory.FillRAM[0x3000 + nOffs];
 
 	return 0;
@@ -205,7 +205,7 @@ static unsigned char ByteReaderIRAM(unsigned int nOffs)
 
 static void ByteWriterIRAM(unsigned int nOffs, unsigned char nVal)
 {
-	if (nOffs < 0x7FF)
+	if (nOffs < 0x800)
 		Memory.FillRAM[0x3000 + nOffs] = static_cast<uint8>(nVal);
 }
 
