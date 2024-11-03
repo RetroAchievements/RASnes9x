@@ -22,6 +22,8 @@
 
 #ifdef RETROACHIEVEMENTS
 #include "win32\RetroAchievements.h"
+static int s_bEmbeddedState = 0;
+static int s_nAchievementStateSize = 0;
 #endif
 
 #ifndef min
@@ -1055,10 +1057,6 @@ bool8 S9xFreezeGame (const char *filename)
 
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, String);
 
-#ifdef RETROACHIEVEMENTS
-		RA_OnSaveState(filename);
-#endif
-
 		return (TRUE);
 	}
 
@@ -1122,6 +1120,8 @@ bool8 S9xUnfreezeGame (const char *filename)
 	{
 		int	result;
 
+		s_bEmbeddedState = 0;
+
 		result = S9xUnfreezeFromStream(stream);
 		S9xCloseSnapshotFile(stream);
 
@@ -1144,7 +1144,8 @@ bool8 S9xUnfreezeGame (const char *filename)
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, String);
 
 #ifdef RETROACHIEVEMENTS
-		RA_OnLoadState(filename);
+		if (!s_bEmbeddedState) // if an embedded achievement state was not found, check for an external one (backwards compatibility with older versions)
+			RA_OnLoadState(filename);
 #endif
 
 		return (TRUE);
@@ -1278,6 +1279,30 @@ void S9xFreezeToStream (STREAM stream)
 
 	if (Settings.MSU1)
 		FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+
+
+#ifdef RETROACHIEVEMENTS
+	if (s_nAchievementStateSize == 0)
+		s_nAchievementStateSize = RA_CaptureState(NULL, 0);
+
+	if (s_nAchievementStateSize > 0)
+	{
+		uint8* achstate = new uint8[s_nAchievementStateSize];
+		int achsize = RA_CaptureState((char*)achstate, s_nAchievementStateSize);
+		if (achsize > s_nAchievementStateSize)
+		{
+			delete achstate;
+
+			achstate = new uint8[achsize];
+			RA_CaptureState((char*)achstate, achsize);
+		}
+
+		FreezeBlock(stream, "ACH", achstate, achsize);
+
+		s_nAchievementStateSize = achsize;
+		delete achstate;
+	}
+#endif
 
 	if (Settings.SnapshotScreenshots)
 	{
@@ -1520,6 +1545,20 @@ int S9xUnfreezeFromStream (STREAM stream)
 		result = UnfreezeStructCopy(stream, "MSU", &local_msu1_data, SnapMSU1, COUNT(SnapMSU1), version);
 		if (result != SUCCESS && Settings.MSU1)
 			break;
+
+#ifdef RETROACHIEVEMENTS
+		int achsize;
+		if (CheckBlockName(stream, "ACH", achsize) == SUCCESS)
+		{
+			uint8* achstate = new uint8[achsize];
+			if (UnfreezeBlock(stream, "ACH", achstate, achsize) == SUCCESS)
+			{
+				RA_RestoreState((const char*)achstate);
+				s_bEmbeddedState = 1;
+			}
+			delete achstate;
+		}
+#endif
 
 		result = UnfreezeStructCopy(stream, "SHO", &local_screenshot, SnapScreenshot, COUNT(SnapScreenshot), version);
 
