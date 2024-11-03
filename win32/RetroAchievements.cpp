@@ -224,11 +224,19 @@ void RA_OnLoadNewRom()
 	RA_InstallMemoryBank(0, ByteReader, ByteWriter, 0x20000);
 	RA_InstallMemoryBank(1, ByteReaderSRAM, ByteWriterSRAM, s_nSRAMBytes);
 	RA_InstallMemoryBank(2, NULL, NULL, 0x80000 - s_nSRAMBytes);
-	RA_InstallMemoryBank(3, ByteReaderIRAM, ByteWriterIRAM, 0x800);
 
 	RA_InstallMemoryBankBlockReader(0, BlockReader);
 	RA_InstallMemoryBankBlockReader(1, BlockReaderSRAM);
-	RA_InstallMemoryBankBlockReader(3, BlockReaderIRAM);
+
+	if (Settings.SA1)
+	{
+		RA_InstallMemoryBank(3, ByteReaderIRAM, ByteWriterIRAM, 0x800);
+		RA_InstallMemoryBankBlockReader(3, BlockReaderIRAM);
+	}
+	else
+	{
+		RA_InstallMemoryBank(3, NULL, NULL, 0x800);
+	}
 
 	RA_OnLoadNewRom(Memory.ROM, Memory.CalculatedSize);
 }
