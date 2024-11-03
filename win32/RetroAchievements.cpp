@@ -143,6 +143,26 @@ void RA_Init()
 	RA_UpdateAppTitle("");
 }
 
+static unsigned int BlockCopy(unsigned int nAddress, unsigned char* pBuffer, unsigned int nBytes, uint8* pMemory, unsigned int nMemorySize)
+{
+	if (nAddress + nBytes <= nMemorySize)
+	{
+		memcpy(pBuffer, &pMemory[nAddress], nBytes);
+		return nBytes;
+	}
+
+	if (nAddress < nMemorySize)
+	{
+		const unsigned int nAvailable = nMemorySize - nAddress;
+		memcpy(pBuffer, &pMemory[nAddress], nAvailable);
+		memset(&pBuffer[nAvailable], 0, nBytes - nAvailable);
+		return nAvailable;
+	}
+
+	memset(pBuffer, 0, nBytes);
+	return 0;
+}
+
 static unsigned char ByteReader(unsigned int nOffs)
 {
 	return Memory.RAM[nOffs % 0x20000];
@@ -152,6 +172,11 @@ static void ByteWriter(unsigned int nOffs, unsigned char nVal)
 {
 	if (nOffs < 0x20000)
 		Memory.RAM[nOffs] = static_cast<uint8>(nVal);
+}
+
+static unsigned int BlockReader(unsigned int nAddress, unsigned char* pBuffer, unsigned int nBytes)
+{
+	return BlockCopy(nAddress, pBuffer, nBytes, Memory.RAM, 0x20000);
 }
 
 static unsigned char ByteReaderSRAM(unsigned int nOffs)
@@ -165,15 +190,45 @@ static void ByteWriterSRAM(unsigned int nOffs, unsigned char nVal)
 		Memory.SRAM[nOffs] = static_cast<uint8>(nVal);
 }
 
+static unsigned int BlockReaderSRAM(unsigned int nAddress, unsigned char* pBuffer, unsigned int nBytes)
+{
+	return BlockCopy(nAddress, pBuffer, nBytes, Memory.SRAM, s_nSRAMBytes);
+}
+
+static unsigned char ByteReaderIRAM(unsigned int nOffs)
+{
+	if (Memory.FillRAM && nOffs < 0x7FF)
+		return Memory.FillRAM[0x3000 + nOffs];
+
+	return 0;
+}
+
+static void ByteWriterIRAM(unsigned int nOffs, unsigned char nVal)
+{
+	if (nOffs < 0x7FF)
+		Memory.FillRAM[0x3000 + nOffs] = static_cast<uint8>(nVal);
+}
+
+static unsigned int BlockReaderIRAM(unsigned int nAddress, unsigned char* pBuffer, unsigned int nBytes)
+{
+	return BlockCopy(nAddress, pBuffer, nBytes, &Memory.FillRAM[0x3000], 0x800);
+}
+
 void RA_OnLoadNewRom()
 {
 	s_nSRAMBytes = Memory.SRAMSize ? (1 << (Memory.SRAMSize + 3)) * 128 : 0;
-	if (s_nSRAMBytes > 0x20000)
-		s_nSRAMBytes = 0x20000;
+	if (s_nSRAMBytes > 0x80000)
+		s_nSRAMBytes = 0x80000;
 
 	RA_ClearMemoryBanks();
 	RA_InstallMemoryBank(0, ByteReader, ByteWriter, 0x20000);
 	RA_InstallMemoryBank(1, ByteReaderSRAM, ByteWriterSRAM, s_nSRAMBytes);
+	RA_InstallMemoryBank(2, NULL, NULL, 0x80000 - s_nSRAMBytes);
+	RA_InstallMemoryBank(3, ByteReaderIRAM, ByteWriterIRAM, 0x800);
+
+	RA_InstallMemoryBankBlockReader(0, BlockReader);
+	RA_InstallMemoryBankBlockReader(1, BlockReaderSRAM);
+	RA_InstallMemoryBankBlockReader(3, BlockReaderIRAM);
 
 	RA_OnLoadNewRom(Memory.ROM, Memory.CalculatedSize);
 }
