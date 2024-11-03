@@ -1,3 +1,97 @@
+Snes9x 1.63
+General:
+- Added a shortcut to change the backdrop color for sprite extraction.
+- Fixed QuickSave 0-9 slot shortcuts not working.
+- Allow "Address:byte" form for cheat inputs.
+- Fixed ZIP files not being closed after patch search.
+- Various memmap fixes to allow unofficial mappings.
+- Added usage of ImGui to draw things on top of the screen instead of inside.
+
+Win32:
+- Fixed AVI not recording audio.
+- Fixed framerate throttling in turbo mode (now works during AVI recording).
+- Fixed interlaced output speed being double.
+- Fixed command line arguments not working.
+- Fixed WaveOut device name display for names longer than 31 characters.
+- Fixed Bank+/- hotkey saving.
+- Added hotkeys for aspect ratio, cheat edit/search.
+- Added multiselect for cheat edit dialog.
+
+Gtk:
+- Fixed config file location to never put files directly in $HOME and obey
+  $XDG_CONFIG_HOME.
+- Updated translations from JakeSmarter and StanleyKid-22.
+
+Mac:
+- Added a new cheat finder.
+- Added MultiCart support back.
+- Create a blank window when starting the program, so the global menu change
+  doesn't go unnoticed.
+
+Snes9x 1.62
+- Fixed SA1 division with negative dividend again. (Atari2)
+- Fixed timing on several instructions. (pi1541)
+- MSU1 audio with no loop point will not repeat from start.
+- Modernized some old memory-related code.
+- Fixed a desynchronization in interlaced modes and reporting.
+- Remove SA1 access to WRAM.
+- Added second set of registers between S-DSP and S-SMP. Fixes
+  PAL version of Virtual Bart.
+
+Gtk + Windows:
+- Added a Vulkan graphics output method. Similar to OpenGL, this
+  can use libretro's slang shaders.
+- Changed the automatic frame skip throttle to take place immediately
+  before showing the frame, making VRR work better.
+- Add menu item to clear recent files entries.
+- Add fixed window size changes up to 10x.
+
+Windows:
+- Improved the shader parameters dialog with sliders and resize.
+- Allow disabling adding registry entries. Deletes any existing
+  entries when the option is disabled.
+
+Gtk:
+- Switched to CMake for build system. Removed meson.
+- Fixed some keys not working with modifiers. (Gutawer)
+- Removed graphics options most people won't understand or need.
+- Improved wayland support. Handle fractional DPI properly.
+
+Snes9x 1.61
+- Restructured tile.cpp tile renderer from heavy macros into C++
+  templates, significantly lowering compile time. (yoffy)
+- MichaelBuckley provided a brand new MacOS port that is completely
+  rewritten based on newer, supported APIs.
+- Fixed an out-of-bound memory access in sound DSP. (Sour, byuu)
+- Revert default SFX2 clock speed increase.
+- Added a render position hack. Fixes glitches in several games.
+- Allow an SRAM mapping up to 128KB.
+
+Win32:
+- Apply turbo mode volume when rewinding.
+- Added menu entry to load oops files, and an option to confirm before
+  saving or loading states.
+- Fixed sound volume resetting when sound reinitializes.
+- Added a save-state preview dialog.
+- Added save banks for up to 100 states
+- Added support for relative-style save slots
+- Fixed blargg rf filter.
+- Show command line options on -h and /?
+
+Gtk:
+- Added an option to show time. (taimoorgit)
+- Use a submodule for glslang, because it doesn't guarantee API stability.
+- Switched to GTK's C++ interface, gtkmm3. This effectively drops
+  GTK+ 2.0 support.
+- Joysticks can now be hotplugged. (jraby)
+
+Unix:
+- Added audio output threading. (yoffy)
+- Added screensaver prevention on joystick use. (greg-kennedy)
+- Fix YUY2 conversion. (greg-kennedy)
+- Add alsa output support. (cjacker)
+- Add I420 conversion. (cjacker)
+
 Snes9x 1.60
 - Fixed subscreen blending with master brightness < 100%.
 - Fixed NMI timing when toggling enable bit. Fixes Chou Aniki--hack removed.

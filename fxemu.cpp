@@ -142,7 +142,7 @@ uint8 S9xGetSuperFX (uint16 address)
 
 void S9xSuperFXExec (void)
 {
-	if ((Memory.FillRAM[0x3000 + GSU_SFR] & FLG_G) && (Memory.FillRAM[0x3000 + GSU_SCMR] & 0x18) == 0x18)
+	if ((Memory.FillRAM[0x3000 + GSU_SFR] & FLG_G) && (Memory.FillRAM[0x3000 + GSU_SCMR] & 0x18) != 0)
 	{
 		FxEmulate(((Memory.FillRAM[0x3000 + GSU_CLSR] & 1) ? (SuperFX.speedPerLine * 5 / 2) : SuperFX.speedPerLine) * Settings.SuperFXClockMultiplier / 100);
 
@@ -196,7 +196,7 @@ static void FxReset (struct FxInfo_s *psFxInfo)
 		else
 		{
 			b %= GSU.nRomBanks * 2;
-			GSU.apvRomBank[i] = &GSU.pvRom[(b << 16) + 0x200000];
+			GSU.apvRomBank[i] = &GSU.pvRom[(b << 16) + 0x800000];
 		}
 	}
 
@@ -218,8 +218,8 @@ static void FxReset (struct FxInfo_s *psFxInfo)
 
 static void fx_readRegisterSpace (void)
 {
-	static uint32	avHeight[] = { 128, 160, 192, 256 };
-	static uint32	avMult[]   = {  16,  32,  32,  64 };
+	static const uint32	avHeight[] = { 128, 160, 192, 256 };
+	static const uint32	avMult[]   = {  16,  32,  32,  64 };
 
 	uint8	*p;
 	int		n;
@@ -228,16 +228,12 @@ static void fx_readRegisterSpace (void)
 
 	// Update R0-R15
 	p = GSU.pvRegisters;
-	for (int i = 0; i < 16; i++)
-	{
-		GSU.avReg[i] = *p++;
-		GSU.avReg[i] += ((uint32) (*p++)) << 8;
-	}
+	for (int i = 0; i < 16; i++, p += 2)
+		GSU.avReg[i] = (uint32) READ_WORD(p);
 
 	// Update other registers
 	p = GSU.pvRegisters;
-	GSU.vStatusReg     =  (uint32) p[GSU_SFR];
-	GSU.vStatusReg    |= ((uint32) p[GSU_SFR + 1]) << 8;
+	GSU.vStatusReg     =  (uint32) READ_WORD(&p[GSU_SFR]);
 	GSU.vPrgBankReg    =  (uint32) p[GSU_PBR];
 	GSU.vRomBankReg    =  (uint32) p[GSU_ROMBR];
 	GSU.vRamBankReg    = ((uint32) p[GSU_RAMBR]) & (FX_RAM_BANKS - 1);
@@ -291,11 +287,8 @@ static void fx_writeRegisterSpace (void)
 	uint8	*p;
 
 	p = GSU.pvRegisters;
-	for (int i = 0; i < 16; i++)
-	{
-		*p++ = (uint8)  GSU.avReg[i];
-		*p++ = (uint8) (GSU.avReg[i] >> 8);
-	}
+	for (int i = 0; i < 16; i++, p += 2)
+		WRITE_WORD(p, GSU.avReg[i]);
 
 	// Update status register
 	if (USEX16(GSU.vZero) == 0)
@@ -319,13 +312,11 @@ static void fx_writeRegisterSpace (void)
 		CF(CY);
 
 	p = GSU.pvRegisters;
-	p[GSU_SFR]     = (uint8)  GSU.vStatusReg;
-	p[GSU_SFR + 1] = (uint8) (GSU.vStatusReg >> 8);
+	WRITE_WORD(&p[GSU_SFR], GSU.vStatusReg);
 	p[GSU_PBR]     = (uint8)  GSU.vPrgBankReg;
 	p[GSU_ROMBR]   = (uint8)  GSU.vRomBankReg;
 	p[GSU_RAMBR]   = (uint8)  GSU.vRamBankReg;
-	p[GSU_CBR]     = (uint8)  GSU.vCacheBaseReg;
-	p[GSU_CBR + 1] = (uint8) (GSU.vCacheBaseReg >> 8);
+	WRITE_WORD(&p[GSU_CBR], GSU.vCacheBaseReg);
 
 	//fx_restoreCache();
 }
@@ -348,29 +339,19 @@ static bool8 fx_checkStartAddress (void)
 {
 	// Check if we start inside the cache
 	if (GSU.bCacheActive && R15 >= GSU.vCacheBaseReg && R15 < (GSU.vCacheBaseReg + 512))
-		return (TRUE);
+		return true;
 
-	/*
-	// Check if we're in an unused area
-	if (GSU.vPrgBankReg < 0x40 && R15 < 0x8000)
-		return (FALSE);
-	*/
 
-	if (GSU.vPrgBankReg >= 0x60 && GSU.vPrgBankReg <= 0x6f)
-		return (FALSE);
+	if (SCMR & (1 << 4))
+	{
+		if (GSU.vPrgBankReg <= 0x5f || GSU.vPrgBankReg >= 0x80)
+			return true;
+	}
 
-	if (GSU.vPrgBankReg >= 0x74)
-		return (FALSE);
+	if (GSU.vPrgBankReg <= 0x7f && (SCMR & (1 << 3)))
+		return true;
 
-	// Check if we're in RAM and the RAN flag is not set
-	if (GSU.vPrgBankReg >= 0x70 && GSU.vPrgBankReg <= 0x73 && !(SCMR & (1 << 3)))
-		return (FALSE);
-
-	// If not, we're in ROM, so check if the RON flag is set
-	if (!(SCMR & (1 << 4)))
-		return (FALSE);
-
-	return (TRUE);
+	return false;
 }
 
 // Execute until the next stop instruction

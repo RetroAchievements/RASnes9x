@@ -16,12 +16,6 @@
 #include <array>
 
 enum {
-    HWA_NONE = 0,
-    HWA_OPENGL = 1,
-    HWA_XV = 2
-};
-
-enum {
     HIRES_MERGE = 0,
     HIRES_NORMAL = 1,
     HIRES_SCALE = 2
@@ -54,13 +48,11 @@ class Snes9xConfig
 {
   public:
     Snes9xConfig();
+    ~Snes9xConfig();
     int load_config_file();
     int save_config_file();
     int load_defaults();
     void rebind_keys();
-    void flush_joysticks();
-    void set_joystick_mode(int mode);
-    void joystick_register_centers();
 
     /* Screen options */
     bool full_screen_on_open;
@@ -79,6 +71,8 @@ class Snes9xConfig
     int hires_effect;
     bool force_inverted_byte_order;
     int splash_image;
+    bool auto_vrr;
+    int osd_size;
 
     snes_ntsc_setup_t ntsc_setup;
     int ntsc_format;
@@ -95,7 +89,7 @@ class Snes9xConfig
     float ntsc_merge_fields;
     int ntsc_scanline_intensity;
     int scanline_filter_intensity;
-    int hw_accel;
+    std::string display_driver;
     bool allow_opengl;
     bool allow_xv;
     bool allow_xrandr;
@@ -128,6 +122,7 @@ class Snes9xConfig
 
     /* Operational */
     std::vector<std::string> sound_drivers;
+    std::vector<std::string> display_drivers;
     int sound_driver;
     bool mute_sound;
     bool mute_sound_turbo;
@@ -157,18 +152,12 @@ class Snes9xConfig
     XRRScreenResources *xrr_screen_resources;
     XRRCrtcInfo *xrr_crtc_info;
 
-#ifdef USE_OPENGL
     bool sync_to_vblank;
-    bool use_pbos;
-    int pbo_format;
-    bool npot_textures;
     bool use_shaders;
     std::string shader_filename;
-    bool use_glfinish;
-    bool use_sync_control;
-#endif
+    bool reduce_input_lag;
 
-    std::vector<JoyDevice> joystick;
+    JoyDevices joysticks;
     int joystick_threshold;
 };
 

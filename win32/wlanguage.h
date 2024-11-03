@@ -20,7 +20,7 @@
 (c) Copyright 2001 - 2006  John Weidman\r\n\
 (c) Copyright 2002 - 2010  Brad Jorsch, funkyass, Kris Bleakley, Nach, zones\r\n\
 (c) Copyright 2006 - 2007  nitsuja\r\n\
-(c) Copyright 2009 - 2019  BearOso, OV2\r\n\r\n\
+(c) Copyright 2009 - 2023  BearOso, OV2\r\n\r\n\
 Windows Port Authors: Matthew Kendora, funkyass, nitsuja, Nach, blip, OV2.\r\n\r\n\
 Snes9x is a Super Nintendo Entertainment System\r\n\
 emulator that allows you to play most games designed\r\n\
@@ -100,7 +100,7 @@ Nintendo is a trademark.")
 #define HOTKEYS_LABEL_2_5 TEXT("Sprites layer:")
 #define HOTKEYS_LABEL_2_6 TEXT("Clipping Windows:")
 #define HOTKEYS_LABEL_2_7 TEXT("Transparency:")
-#define HOTKEYS_LABEL_2_8 TEXT("SuperScope turbo:")
+#define HOTKEYS_LABEL_2_8 TEXT("Toggle backdrop:")
 #define HOTKEYS_LABEL_2_9 TEXT("SuperScope pause:")
 #define HOTKEYS_LABEL_2_10 TEXT("Switch controllers:")
 #define HOTKEYS_LABEL_2_11 TEXT("Joypad swap:")
@@ -120,6 +120,7 @@ Nintendo is a trademark.")
 #define HOTKEYS_LABEL_3_10 TEXT("Turbo Up mode:")
 #define HOTKEYS_LABEL_3_11 TEXT("Turbo Right mode:")
 #define HOTKEYS_LABEL_3_12 TEXT("Turbo Down mode:")
+#define HOTKEYS_LABEL_3_13 TEXT("SuperScope turbo:")
 
 
 #define HOTKEYS_LABEL_4_1 TEXT("Select Slot 0:")
@@ -135,7 +136,9 @@ Nintendo is a trademark.")
 #define HOTKEYS_LABEL_4_11 TEXT("Save to file:")
 #define HOTKEYS_LABEL_4_12 TEXT("Load from file:")
 
-
+#define HOTKEYS_SWITCH_ASPECT_RATIO TEXT("Switch aspect Ratio:")
+#define HOTKEYS_CHEAT_EDITOR_DIALOG TEXT("Cheats Editor Dialog:")
+#define HOTKEYS_CHEAT_SEARCH_DIALOG TEXT("Cheats Search Dialog:")
 
 // gaming buttons and axes
 #define GAMEDEVICE_JOYNUMPREFIX "(J%x)" // don't change this
@@ -361,7 +364,7 @@ Nintendo is a trademark.")
 
 // Save Messages
 
-#define FREEZE_INFO_SET_SLOT_N "Set save slot %03d"
+#define FREEZE_INFO_SET_SLOT_N "Set save slot %03d [%s]"
 #define FREEZE_INFO_SET_BANK_N "Set save bank %03d"
 
 // AVI Messages

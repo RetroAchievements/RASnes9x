@@ -39,6 +39,9 @@
 #define NUM_SAVE_BANKS 10
 #define LAST_SAVE_BANK (NUM_SAVE_BANKS - 1)
 
+constexpr int ASPECT_WIDTH_4_3 = 256;
+constexpr int ASPECT_WIDTH_8_7 = 299;
+
 #include "_tfwopen.h"
 #ifdef UNICODE
 #define _tToChar WideToUtf8
@@ -109,7 +112,8 @@ enum RenderFilter{
 enum OutputMethod {
 	DIRECTDRAW = 0,
 	DIRECT3D,
-	OPENGL
+	OPENGL,
+	VULKAN
 };
 
 struct dMode
@@ -118,6 +122,17 @@ struct dMode
 	long width;
 	long depth;
 	long rate;
+};
+
+struct ShaderParam
+{
+    std::string name;
+    std::string id;
+    float min;
+    float max;
+    float val;
+    float step;
+    int significant_digits;
 };
 
 struct sCustomRomDlgSettings {
@@ -134,10 +149,8 @@ struct sGUI {
     HMENU hMenu;
     HINSTANCE hInstance;
 
-    DWORD hFrameTimer;
     DWORD hHotkeyTimer;
     HANDLE ClientSemaphore;
-    HANDLE FrameTimerSemaphore;
     HANDLE ServerTimerSemaphore;
 
     BYTE Language;
@@ -150,8 +163,8 @@ struct sGUI {
 	bool AVIHiRes;
     bool DoubleBuffered;
     bool FullScreen;
+	bool FullscreenOnOpen;
     bool Stretch;
-    bool HeightExtend;
     bool AspectRatio;
 	bool IntegerScaling;
 	OutputMethod outputMethod;
@@ -168,7 +181,7 @@ struct sGUI {
 	TCHAR OGLshaderFileName[MAX_PATH];
 
 	bool OGLdisablePBOs;
-	bool filterMessagFont;
+	int OSDSize;
 
     bool IgnoreNextMouseMove;
     RECT window_size;
@@ -259,6 +272,8 @@ struct sGUI {
     // rewinding
     unsigned int rewindBufferSize;
     unsigned int rewindGranularity;
+
+	bool AddToRegistry;
 };
 
 //TURBO masks
@@ -281,7 +296,6 @@ struct sLanguages {
     TCHAR *errModeDD;
     TCHAR *errInitDS;
     TCHAR *ApplyNeedRestart;
-    TCHAR *errFrameTimer;
 };
 
 #define CUSTKEY_ALT_MASK   0x01
@@ -323,6 +337,7 @@ struct SCustomKeys {
 	SCustomKey BGL3;
 	SCustomKey BGL4;
 	SCustomKey BGL5;
+	SCustomKey ToggleBackdrop;
 	SCustomKey ClippingWindows;
 	SCustomKey Transparency;
 	SCustomKey JoypadSwap;
@@ -336,6 +351,9 @@ struct SCustomKeys {
     SCustomKey SaveFileSelect;
     SCustomKey LoadFileSelect;
     SCustomKey Mute;
+    SCustomKey AspectRatio;
+    SCustomKey CheatEditorDialog;
+    SCustomKey CheatSearchDialog;
 };
 
 struct SJoypad {
@@ -440,16 +458,6 @@ enum
 #define S9X_REG_KEY_BASE MY_REG_KEY
 #define S9X_REG_KEY_VERSION REG_KEY_VER
 
-#define EXT_WIDTH (MAX_SNES_WIDTH + 4)
-#define EXT_PITCH (EXT_WIDTH * 2)
-#define EXT_HEIGHT (MAX_SNES_HEIGHT + 4)
-#define EXT_HEIGHT_WITH_CENTERING (EXT_HEIGHT + 16) // extra lines to center non ext height images
-// Offset into buffer to allow a two pixel border around the whole rendered
-// SNES image. This is a speed up hack to allow some of the image processing
-// routines to access black pixel data outside the normal bounds of the buffer.
-#define EXT_OFFSET (EXT_PITCH * 2 + 2 * 2)
-#define EXT_OFFSET_WITH_CENTERING (EXT_OFFSET + EXT_PITCH * 16) // same as above
-
 #define WIN32_WHITE RGB(255,255,255)
 
 /*****************************************************************************/
@@ -471,5 +479,6 @@ void FreezeUnfreezeDialog(bool8 freeze);
 void FreezeUnfreezeDialogPreview(bool8 freeze);
 void FreezeUnfreeze(const char *filename, bool8 freeze);
 bool UnfreezeScreenshotSlot(int slot, uint16 **image_buffer, int &width, int &height);
+void S9xWinRemoveRegistryKeys();
 
 #endif // !defined(SNES9X_H_INCLUDED)
